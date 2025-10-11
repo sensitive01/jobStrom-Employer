@@ -26,7 +26,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           />
         </svg>
       ),
-      path: "/employer-dashboard",
+      path: "/employer/dashboard",
     },
     {
       id: "jobs",
