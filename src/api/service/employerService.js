@@ -70,3 +70,12 @@ export const updateJob = async (jobId,updatedData) => {
     return err;
   }
 };
+
+export const disableJobStatus = async (jobId) => {
+  try {
+    const response = await axiosInstance.put(`/employer/editjob-status/${jobId}`,);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};

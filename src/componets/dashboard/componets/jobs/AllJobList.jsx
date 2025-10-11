@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { createPortal } from "react-dom";
 import MainLayout from "../../layout/MainLayout";
-import { getAllJobPosted } from "../../../../api/service/employerService";
+import { disableJobStatus, getAllJobPosted } from "../../../../api/service/employerService";
 
 const AllJobList = () => {
   const navigate = useNavigate();
@@ -60,17 +60,12 @@ const AllJobList = () => {
 
     try {
       // Toggle the isActive status instead of actually deleting
-      const response = await fetch(`/api/jobs/${jobToDelete._id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          isActive: !jobToDelete.isActive,
-        }),
-      });
+      const response = await disableJobStatus(jobToDelete._id)
+      
+      
+      
 
-      if (response.ok) {
+      if (response.status===200) {
         // Update job status in state
         setJobs(
           jobs.map((job) =>
