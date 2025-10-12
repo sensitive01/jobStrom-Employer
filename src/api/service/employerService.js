@@ -7,7 +7,7 @@ export const registerEmployer = async (
   password
 ) => {
   try {
-    const response = await axiosInstance.post(`/employer/signup`, {
+    const response = await axiosInstance.post(`/signup`, {
       companyName,
       contactPerson,
       contactEmail,
@@ -21,7 +21,7 @@ export const registerEmployer = async (
 
 export const loginEmployer = async (userEmail, password) => {
   try {
-    const response = await axiosInstance.post(`/employer/login`, {
+    const response = await axiosInstance.post(`/login`, {
       userEmail,
       password,
     });
@@ -33,7 +33,7 @@ export const loginEmployer = async (userEmail, password) => {
 
 export const postNewJob = async (userId,jobData) => {
   try {
-    const response = await axiosInstance.post(`/employer/postjob/${userId}`, {
+    const response = await axiosInstance.post(`/postjob/${userId}`, {
       jobData,
     });
     return response;
@@ -44,7 +44,7 @@ export const postNewJob = async (userId,jobData) => {
 
 export const getAllJobPosted = async (userId,jobData) => {
   try {
-    const response = await axiosInstance.get(`/employer/fetchjob/${userId}`, {
+    const response = await axiosInstance.get(`/fetchjob/${userId}`, {
       jobData,
     });
     return response;
@@ -55,7 +55,7 @@ export const getAllJobPosted = async (userId,jobData) => {
 
 export const getJobDetails = async (jobId) => {
   try {
-    const response = await axiosInstance.get(`/employer/viewjobs/${jobId}`);
+    const response = await axiosInstance.get(`/viewjobs/${jobId}`);
     return response;
   } catch (err) {
     return err;
@@ -64,7 +64,7 @@ export const getJobDetails = async (jobId) => {
 
 export const updateJob = async (jobId,updatedData) => {
   try {
-    const response = await axiosInstance.put(`/employer/editjob/${jobId}`,{updatedData});
+    const response = await axiosInstance.put(`/editjob/${jobId}`,{updatedData});
     return response;
   } catch (err) {
     return err;
@@ -73,7 +73,7 @@ export const updateJob = async (jobId,updatedData) => {
 
 export const disableJobStatus = async (jobId) => {
   try {
-    const response = await axiosInstance.put(`/employer/editjob-status/${jobId}`,);
+    const response = await axiosInstance.put(`/editjob-status/${jobId}`,);
     return response;
   } catch (err) {
     return err;

@@ -11,8 +11,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/employer-signup" element={<EmployerSignUpPage />} />
-        <Route path="/employer-login" element={<EmployerLogin />} />
+        <Route path="/employer/signup" element={<EmployerSignUpPage />} />
+        <Route path="/employer/login" element={<EmployerLogin />} />
         <Route path="/employer/dashboard" element={<DashboardPage />} />
         <Route path="/employer/all-job-list" element={<JobPostedPage />} />
         <Route path="/employer/post-new-job" element={<PostJobForm />} />

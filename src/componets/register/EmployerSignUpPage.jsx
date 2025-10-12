@@ -62,7 +62,7 @@ const EmployerSignUpPage = () => {
           agreeToTerms: false,
         });
         setTimeout(() => {
-          window.location.href = "/employer-login";
+          window.location.href = "/employer/login";
         }, 2000);
       } else {
         toast.error(response.response.data.message);
@@ -271,7 +271,7 @@ const EmployerSignUpPage = () => {
                   <p className="text-white text-sm">
                     Already a member?{" "}
                     <a
-                      href="/employer-login"
+                      href="/employer/login"
                       className="font-semibold text-white underline hover:text-purple-100 transition-colors"
                     >
                       Sign In
