@@ -12,7 +12,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/signup" element={<EmployerSignUpPage />} />
-        <Route path="/login" element={<EmployerLogin />} />
+        <Route path="/" element={<EmployerLogin />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/all-job-list" element={<JobPostedPage />} />
         <Route path="/post-new-job" element={<PostJobForm />} />
