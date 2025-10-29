@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { createPortal } from "react-dom";
 import MainLayout from "../../layout/MainLayout";
-import { disableJobStatus, getAllJobPosted } from "../../../../api/service/employerService";
+import {
+  disableJobStatus,
+  getAllJobPosted,
+} from "../../../../api/service/employerService";
 
 const AllJobList = () => {
   const navigate = useNavigate();
@@ -39,8 +42,7 @@ const AllJobList = () => {
 
   // Show preview modal
   const handlePreviewJob = (job) => {
-    setSelectedJob(job);
-    setShowPreviewModal(true);
+    navigate(`/employer/preview-job/${job._id}`);
   };
 
   // Navigate to Edit Job page
@@ -60,12 +62,9 @@ const AllJobList = () => {
 
     try {
       // Toggle the isActive status instead of actually deleting
-      const response = await disableJobStatus(jobToDelete._id)
-      
-      
-      
+      const response = await disableJobStatus(jobToDelete._id);
 
-      if (response.status===200) {
+      if (response.status === 200) {
         // Update job status in state
         setJobs(
           jobs.map((job) =>

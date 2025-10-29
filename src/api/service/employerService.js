@@ -31,7 +31,7 @@ export const loginEmployer = async (userEmail, password) => {
   }
 };
 
-export const postNewJob = async (userId,jobData) => {
+export const postNewJob = async (userId, jobData) => {
   try {
     const response = await axiosInstance.post(`/postjob/${userId}`, {
       jobData,
@@ -42,7 +42,7 @@ export const postNewJob = async (userId,jobData) => {
   }
 };
 
-export const getAllJobPosted = async (userId,jobData) => {
+export const getAllJobPosted = async (userId, jobData) => {
   try {
     const response = await axiosInstance.get(`/fetchjob/${userId}`, {
       jobData,
@@ -62,9 +62,11 @@ export const getJobDetails = async (jobId) => {
   }
 };
 
-export const updateJob = async (jobId,updatedData) => {
+export const updateJob = async (jobId, updatedData) => {
   try {
-    const response = await axiosInstance.put(`/editjob/${jobId}`,{updatedData});
+    const response = await axiosInstance.put(`/editjob/${jobId}`, {
+      updatedData,
+    });
     return response;
   } catch (err) {
     return err;
@@ -73,7 +75,35 @@ export const updateJob = async (jobId,updatedData) => {
 
 export const disableJobStatus = async (jobId) => {
   try {
-    const response = await axiosInstance.put(`/editjob-status/${jobId}`,);
+    const response = await axiosInstance.put(`/editjob-status/${jobId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getCandidateDetails = async (candidateId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/get-candidate-details/${candidateId}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const updateJobApplicationStatus = async (
+  jobId,
+  applicationId,
+  newStatus,
+  additionalData
+) => {
+  try {
+    const response = await axiosInstance.put(
+      `/update-candidate-job-application-status/${jobId}`,
+      { applicationId, newStatus, additionalData }
+    );
     return response;
   } catch (err) {
     return err;

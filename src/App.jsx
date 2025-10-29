@@ -7,19 +7,18 @@ import EmployerSignUpPage from "./componets/register/EmployerSignUpPage";
 import DashboardPage from "./componets/dashboard/componets/dashboard/DashboardPage";
 import JobPostedPage from "./componets/dashboard/componets/jobs/AllJobList";
 import PostJobForm from "./componets/dashboard/componets/jobs/PostJobForm";
+import PreviewJobs from "./componets/dashboard/componets/jobs/PreviewJobs";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/signup" element={<EmployerSignUpPage />} />
-        <Route path="/" element={<EmployerLogin />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/all-job-list" element={<JobPostedPage />} />
-        <Route path="/post-new-job" element={<PostJobForm />} />
-        <Route path="/edit-job/:id" element={<PostJobForm />} />
-
-
-
+        <Route path="/employer/signup" element={<EmployerSignUpPage />} />
+        <Route path="/employer" element={<EmployerLogin />} />
+        <Route path="/employer/dashboard" element={<DashboardPage />} />
+        <Route path="/employer/all-job-list" element={<JobPostedPage />} />
+        <Route path="/employer/post-new-job" element={<PostJobForm />} />
+        <Route path="/employer/edit-job/:id" element={<PostJobForm />} />
+        <Route path="/employer/preview-job/:jobId" element={<PreviewJobs />} />
       </Routes>
       <ToastContainer
         position="top-right"
