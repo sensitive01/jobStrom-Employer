@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { createPortal } from "react-dom";
-import MainLayout from "../../layout/MainLayout";
+import MainLayout from "../../../layout/MainLayout";
 import {
   disableJobStatus,
-  getAllJobPosted,
-  getJobCountExceeded,
-} from "../../../../api/service/employerService";
+  getActiveJobPosted,
 
-const AllJobList = () => {
+  getJobCountExceeded,
+} from "../../../../../api/service/employerService";
+
+const ActiveJobs = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const [jobs, setJobs] = useState([]);
@@ -32,7 +32,7 @@ const AllJobList = () => {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const response = await getAllJobPosted(userId);
+      const response = await getActiveJobPosted(userId);
       setJobs(response.data || []);
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -134,9 +134,9 @@ const AllJobList = () => {
   return (
     <MainLayout>
       {/* Page Header */}
-      <div className="mb-6 flex items-center justify-between">
+      {/* <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Job Posted</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Active Jobs</h2>
           <p className="text-gray-600">Manage all your posted jobs</p>
         </div>
         <button
@@ -158,10 +158,10 @@ const AllJobList = () => {
           </svg>
           Post New Job
         </button>
-      </div>
+      </div> */}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-gray-500 text-sm">Total Jobs</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{jobs.length}</p>
@@ -172,12 +172,7 @@ const AllJobList = () => {
             {jobs.filter((j) => j.isActive && j.status === "open").length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-gray-500 text-sm">Inactive Jobs</p>
-          <p className="text-2xl font-bold text-gray-800 mt-1">
-            {jobs.filter((j) => !j.isActive).length}
-          </p>
-        </div>
+
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-gray-500 text-sm">Total Applications</p>
           <p className="text-2xl font-bold text-purple-600 mt-1">
@@ -422,4 +417,4 @@ const AllJobList = () => {
   );
 };
 
-export default AllJobList;
+export default ActiveJobs;

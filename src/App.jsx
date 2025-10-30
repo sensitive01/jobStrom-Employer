@@ -8,6 +8,10 @@ import DashboardPage from "./componets/dashboard/componets/dashboard/DashboardPa
 import JobPostedPage from "./componets/dashboard/componets/jobs/AllJobList";
 import PostJobForm from "./componets/dashboard/componets/jobs/PostJobForm";
 import PreviewJobs from "./componets/dashboard/componets/jobs/PreviewJobs";
+import ActiveJobs from "./componets/dashboard/componets/jobs/activejobs/ActiveJobs";
+import ClosedJobs from "./componets/dashboard/componets/jobs/closedjobs/ClosedJobs";
+import AllCandidate from "./componets/dashboard/componets/candidates/AllCandidate";
+import ViewCandidateDetails from "./componets/dashboard/componets/candidates/ViewCandidateDetails";
 function App() {
   return (
     <BrowserRouter>
@@ -19,6 +23,10 @@ function App() {
         <Route path="/employer/post-new-job" element={<PostJobForm />} />
         <Route path="/employer/edit-job/:id" element={<PostJobForm />} />
         <Route path="/employer/preview-job/:jobId" element={<PreviewJobs />} />
+        <Route path="/employer/active-jobs" element={<ActiveJobs />} />
+        <Route path="/employer/closed-jobs" element={<ClosedJobs />} />
+        <Route path="/employer/all-candidates-list" element={<AllCandidate />} />
+        <Route path="/employer/view-candidate-details/:candidateId" element={<ViewCandidateDetails />} />
       </Routes>
       <ToastContainer
         position="top-right"

@@ -73,9 +73,9 @@ export const updateJob = async (jobId, updatedData) => {
   }
 };
 
-export const disableJobStatus = async (jobId) => {
+export const disableJobStatus = async (jobId,userId) => {
   try {
-    const response = await axiosInstance.put(`/editjob-status/${jobId}`);
+    const response = await axiosInstance.put(`/editjob-status/${jobId}/${userId}`);
     return response;
   } catch (err) {
     return err;
@@ -103,6 +103,49 @@ export const updateJobApplicationStatus = async (
     const response = await axiosInstance.put(
       `/update-candidate-job-application-status/${jobId}`,
       { applicationId, newStatus, additionalData }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getJobCountExceeded = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/get-job-post-count-exceeded-or-not/${employerId}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getActiveJobPosted = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/get-active-job-data/${employerId}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+export const getInActiveJobPosted = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(
+      `/get-inactive-job-data/${employerId}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getCandidateData = async () => {
+  try {
+    const response = await axiosInstance.get(
+      `/get-candidate-database-data`
     );
     return response;
   } catch (err) {

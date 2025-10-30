@@ -52,9 +52,16 @@ const Sidebar = ({ isOpen, onClose }) => {
           name: "Job Posted",
           path: "/employer/all-job-list",
         },
-        { id: "active-jobs", name: "Active Jobs", path: "/jobs/active" },
-        { id: "closed-jobs", name: "Closed Jobs", path: "/jobs/closed" },
-        { id: "draft-jobs", name: "Draft Jobs", path: "/jobs/draft" },
+        {
+          id: "active-jobs",
+          name: "Active Jobs",
+          path: "/employer/active-jobs",
+        },
+        {
+          id: "closed-jobs",
+          name: "Closed Jobs",
+          path: "/employer/closed-jobs",
+        },
       ],
     },
     {
@@ -79,7 +86,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         {
           id: "all-candidates",
           name: "All Candidates",
-          path: "/candidates/all",
+          path: "/employer/all-candidates-list",
         },
         {
           id: "shortlisted",
@@ -166,7 +173,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   // Set active menu based on current route
   useEffect(() => {
     const currentPath = location.pathname;
-    
+
     // Check if current path matches any menu item
     for (const item of menuItems) {
       if (item.path === currentPath) {
@@ -174,7 +181,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         setOpenSubmenu(null);
         return;
       }
-      
+
       // Check submenu items
       if (item.submenu) {
         for (const subItem of item.submenu) {
@@ -238,8 +245,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <button
                   onClick={() => handleMenuClick(item.id, item.path)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all ${
-                    activeMenu === item.id || 
-                    (item.submenu && item.submenu.some(sub => sub.id === activeMenu))
+                    activeMenu === item.id ||
+                    (item.submenu &&
+                      item.submenu.some((sub) => sub.id === activeMenu))
                       ? "bg-purple-600 text-white"
                       : "text-gray-700 hover:bg-purple-50"
                   }`}
