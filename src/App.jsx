@@ -12,21 +12,29 @@ import ActiveJobs from "./componets/dashboard/componets/jobs/activejobs/ActiveJo
 import ClosedJobs from "./componets/dashboard/componets/jobs/closedjobs/ClosedJobs";
 import AllCandidate from "./componets/dashboard/componets/candidates/AllCandidate";
 import ViewCandidateDetails from "./componets/dashboard/componets/candidates/ViewCandidateDetails";
+import ChatPage from "./componets/dashboard/componets/chat/ChatPage";
+import ShortListedCandidate from "./componets/dashboard/componets/candidates/ShortListedCandidate";
+import HiredCandidates from "./componets/dashboard/componets/candidates/HiredCandidates";
+import InterViewSheduledCandidate from "./componets/dashboard/componets/candidates/InterViewSheduledCandidate";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/employer/signup" element={<EmployerSignUpPage />} />
-        <Route path="/employer" element={<EmployerLogin />} />
-        <Route path="/employer/dashboard" element={<DashboardPage />} />
-        <Route path="/employer/all-job-list" element={<JobPostedPage />} />
-        <Route path="/employer/post-new-job" element={<PostJobForm />} />
-        <Route path="/employer/edit-job/:id" element={<PostJobForm />} />
-        <Route path="/employer/preview-job/:jobId" element={<PreviewJobs />} />
-        <Route path="/employer/active-jobs" element={<ActiveJobs />} />
-        <Route path="/employer/closed-jobs" element={<ClosedJobs />} />
-        <Route path="/employer/all-candidates-list" element={<AllCandidate />} />
-        <Route path="/employer/view-candidate-details/:candidateId" element={<ViewCandidateDetails />} />
+        <Route path="/signup" element={<EmployerSignUpPage />} />
+        <Route path="/" element={<EmployerLogin />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/all-job-list" element={<JobPostedPage />} />
+        <Route path="/post-new-job" element={<PostJobForm />} />
+        <Route path="/edit-job/:id" element={<PostJobForm />} />
+        <Route path="/preview-job/:jobId" element={<PreviewJobs />} />
+        <Route path="/active-jobs" element={<ActiveJobs />} />
+        <Route path="/closed-jobs" element={<ClosedJobs />} />
+        <Route path="/all-candidates-list" element={<AllCandidate />} />
+        <Route path="/view-candidate-details/:candidateId" element={<ViewCandidateDetails />} />
+        <Route path="/chat-page" element={<ChatPage />} />
+        <Route path="/short-listed-candidate" element={<ShortListedCandidate />} />
+         <Route path="/hired-candidate" element={<HiredCandidates />} />
+          <Route path="/interview-sheduled-candidate" element={<InterViewSheduledCandidate />} />
       </Routes>
       <ToastContainer
         position="top-right"

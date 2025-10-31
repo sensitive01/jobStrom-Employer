@@ -57,7 +57,7 @@ const EmployerLogin = () => {
 
         // Redirect to dashboard or home page
         setTimeout(() => {
-          navigate("/employer/dashboard");
+          navigate("/dashboard");
         }, 1000);
       } else {
         toast.error(response?.response?.data?.message);
@@ -234,7 +234,7 @@ const EmployerLogin = () => {
                   <p className="text-white text-sm">
                     Don't have an account?{" "}
                     <a
-                      href="/employer/signup"
+                      href="/signup"
                       className="font-semibold text-white underline hover:text-purple-100 transition-colors"
                     >
                       Sign Up

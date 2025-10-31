@@ -48,7 +48,7 @@ const TopBar = ({ onMenuToggle }) => {
     localStorage.removeItem("userId");
     localStorage.removeItem("token");
     // Navigate to login
-    navigate("/employer-login");
+    navigate("/");
   };
 
   return (
@@ -75,7 +75,7 @@ const TopBar = ({ onMenuToggle }) => {
               />
             </svg>
           </button>
-          <div className="flex items-center cursor-pointer" onClick={() => navigate("/employer-dashboard")}>
+          <div className="flex items-center cursor-pointer" onClick={() => navigate("/dashboard")}>
             <img
               src={logoImage}
               alt="JobsStorm Logo"
@@ -208,7 +208,7 @@ const TopBar = ({ onMenuToggle }) => {
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
                 <button
                   onClick={() => {
-                    navigate("/employer/profile");
+                    navigate("/profile");
                     setShowProfileMenu(false);
                   }}
                   className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

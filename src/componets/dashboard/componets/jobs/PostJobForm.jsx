@@ -239,7 +239,7 @@ const PostJobPage = () => {
         if (response.status === 200) {
           toast.success("Job updated successfully");
           setTimeout(() => {
-            navigate("/employer/all-job-list");
+            navigate("/all-job-list");
           }, 1500);
         }
       } else {
@@ -248,7 +248,7 @@ const PostJobPage = () => {
         if (response.status === 201) {
           toast.success(response.data.message);
           setTimeout(() => {
-            navigate("/employer/all-job-list");
+            navigate("/all-job-list");
           }, 1500);
         }
       }

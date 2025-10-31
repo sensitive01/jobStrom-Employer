@@ -73,9 +73,11 @@ export const updateJob = async (jobId, updatedData) => {
   }
 };
 
-export const disableJobStatus = async (jobId,userId) => {
+export const disableJobStatus = async (jobId, userId) => {
   try {
-    const response = await axiosInstance.put(`/editjob-status/${jobId}/${userId}`);
+    const response = await axiosInstance.put(
+      `/editjob-status/${jobId}/${userId}`
+    );
     return response;
   } catch (err) {
     return err;
@@ -144,8 +146,29 @@ export const getInActiveJobPosted = async (employerId) => {
 
 export const getCandidateData = async () => {
   try {
+    const response = await axiosInstance.get(`/get-candidate-database-data`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getShortListedCandidateData = async (employerId) => {
+  try {
     const response = await axiosInstance.get(
-      `/get-candidate-database-data`
+      `/get-shortlisted-candidate-data/${employerId}`
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const sendMessage = async (messageData) => {
+  try {
+    const response = await axiosInstance.post(
+      `/get-shortlisted-candidate-data/${employerId}`
     );
     return response;
   } catch (err) {

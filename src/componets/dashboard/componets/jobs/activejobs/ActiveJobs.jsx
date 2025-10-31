@@ -57,15 +57,15 @@ const ActiveJobs = () => {
   };
 
   const handlePostJob = async () => {
-    navigate("/employer/post-new-job");
+    navigate("/post-new-job");
   };
 
   const handlePreviewJob = (job) => {
-    navigate(`/employer/preview-job/${job._id}`);
+    navigate(`/preview-job/${job._id}`);
   };
 
   const handleEditJob = (jobId) => {
-    navigate(`/employer/edit-job/${jobId}`);
+    navigate(`/edit-job/${jobId}`);
   };
 
   const handleDeleteClick = (job) => {

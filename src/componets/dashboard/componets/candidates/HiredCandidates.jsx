@@ -4,15 +4,12 @@ import { toast } from "react-toastify";
 import MainLayout from "../../layout/MainLayout";
 import { getCandidateDetails } from "../../../../api/service/employerService";
 import accountImg from "../../../../../public/assets/images/profileImage.png";
-import ChatComponent from "./ChatComponent";
 
-const ViewCandidateDetails = () => {
-  const employerId = localStorage.getItem("userId")
+const HiredCandidates = () => {
   const { candidateId } = useParams();
   const navigate = useNavigate();
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     fetchCandidateDetails();
@@ -45,11 +42,6 @@ const ViewCandidateDetails = () => {
     if (candidate?.resume?.url) {
       window.open(candidate.resume.url, "_blank");
     }
-  };
-
-  const toggleChat = async() => {
-    // const response = await createAchatRoom(candidateId,employerId)
-    setIsChatOpen(!isChatOpen);
   };
 
   if (loading) {
@@ -154,27 +146,8 @@ const ViewCandidateDetails = () => {
                 </div>
               </div>
 
-              {/* Right Section: Action Buttons */}
-              <div className="mt-6 lg:mt-0 flex flex-wrap gap-3 justify-center lg:justify-end">
-                <button
-                  onClick={toggleChat}
-                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl font-semibold"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    />
-                  </svg>
-                  Chat with Candidate
-                </button>
+              {/* Right Section: Action Button */}
+              <div className="mt-6 lg:mt-0 flex justify-center lg:justify-end">
                 {candidate.resume?.url && (
                   <button
                     onClick={handleDownloadResume}
@@ -621,17 +594,8 @@ const ViewCandidateDetails = () => {
           </div>
         </div>
       </div>
-
-      {/* Chat Component */}
-      {isChatOpen && (
-        <ChatComponent
-          candidateId={candidateId}
-          candidateName={candidate.userName}
-          onClose={toggleChat}
-        />
-      )}
     </MainLayout>
   );
 };
 
-export default ViewCandidateDetails;
+export default HiredCandidates;
