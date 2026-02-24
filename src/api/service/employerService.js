@@ -4,6 +4,7 @@ export const registerEmployer = async (
   companyName,
   contactPerson,
   contactEmail,
+  fullMobile,
   password
 ) => {
   try {
@@ -11,6 +12,7 @@ export const registerEmployer = async (
       companyName,
       contactPerson,
       contactEmail,
+      fullMobile,
       password,
     });
     return response;
@@ -165,11 +167,84 @@ export const getShortListedCandidateData = async (employerId) => {
 };
 
 
-export const sendMessage = async (messageData) => {
+export const createAchatRoom = async (employerId, candidateId) => {
   try {
     const response = await axiosInstance.post(
-      `/get-shortlisted-candidate-data/${employerId}`
+      `/create-chat-room/${employerId}/${candidateId}`,
+
     );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+
+
+
+export const sendVerificationOtp = async (
+  companyEmail,
+  contactPerson,
+  companyName,
+
+) => {
+  try {
+    const response = await axiosInstance.post(`/send-verification-otp`, {
+      companyEmail,
+      contactPerson,
+      companyName,
+
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+
+export const verifyOtpEmployer = async (userEmail, otp) => {
+  try {
+    const response = await axiosInstance.post(`/verifyemailotp`, {
+      userEmail,
+      otp,
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getEmployerData = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(`/get-employer-topbar-data/${employerId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getDashboardData = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(`/get-dashboard-data/${employerId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getInterviewDetails = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(`/get-interview-details/${employerId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getSuggestedCandidates = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(`/get-suggested-candidates/${employerId}`);
     return response;
   } catch (err) {
     return err;

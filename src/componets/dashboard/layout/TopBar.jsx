@@ -1,12 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logoImage from "../../../../public/assets/images/logo-dark.png";
+import { getEmployerData } from "../../../api/service/employerService";
 
 const TopBar = ({ onMenuToggle }) => {
+  const empId = localStorage.getItem("userId");
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  
+  const [employerData, setEmployerData] = useState(() => {
+    // Initialize state from localStorage to prevent flicker on page navigation
+    const savedData = localStorage.getItem("employerData");
+    return savedData ? JSON.parse(savedData) : null;
+  });
+
   const notificationsRef = useRef(null);
   const profileRef = useRef(null);
 
@@ -29,7 +36,10 @@ const TopBar = ({ onMenuToggle }) => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -43,10 +53,31 @@ const TopBar = ({ onMenuToggle }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!empId) return;
+        const response = await getEmployerData(empId);
+        if (response?.data) {
+          setEmployerData(response.data);
+          localStorage.setItem("employerData", JSON.stringify(response.data));
+        } else if (response?.contactPerson) {
+          // Fallback in case the response is the data payload directly
+          setEmployerData(response);
+          localStorage.setItem("employerData", JSON.stringify(response));
+        }
+      } catch (error) {
+        console.error("Error fetching employer data:", error);
+      }
+    };
+    fetchData();
+  }, [empId]);
+
   const handleLogout = () => {
     // Clear user data
     localStorage.removeItem("userId");
     localStorage.removeItem("token");
+    localStorage.removeItem("employerData");
     // Navigate to login
     navigate("/");
   };
@@ -75,7 +106,10 @@ const TopBar = ({ onMenuToggle }) => {
               />
             </svg>
           </button>
-          <div className="flex items-center cursor-pointer" onClick={() => navigate("/dashboard")}>
+          <div
+            className="flex items-center cursor-pointer"
+            onClick={() => navigate("/dashboard")}
+          >
             <img
               src={logoImage}
               alt="JobsStorm Logo"
@@ -131,9 +165,9 @@ const TopBar = ({ onMenuToggle }) => {
                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                 />
               </svg>
-              {notifications.filter(n => n.unread).length > 0 && (
+              {notifications.filter((n) => n.unread).length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {notifications.filter(n => n.unread).length}
+                  {notifications.filter((n) => n.unread).length}
                 </span>
               )}
             </button>
@@ -179,17 +213,19 @@ const TopBar = ({ onMenuToggle }) => {
               className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors"
               aria-label="Profile menu"
             >
-              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                A
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold uppercase">
+                {employerData?.contactPerson?.charAt(0) || "A"}
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-semibold text-gray-800">
-                  Admin User
+                  {employerData?.contactPerson || "Admin User"}
                 </p>
-                <p className="text-xs text-gray-500">Employer</p>
+                <p className="text-xs text-gray-500">
+                  {employerData?.companyName || "Employer"}
+                </p>
               </div>
               <svg
-                className={`w-4 h-4 text-gray-600 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 text-gray-600 transition-transform ${showProfileMenu ? "rotate-180" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

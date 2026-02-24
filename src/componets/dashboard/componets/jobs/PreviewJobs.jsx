@@ -41,6 +41,7 @@ const JobApplications = () => {
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [interviewDate, setInterviewDate] = useState("");
   const [interviewTime, setInterviewTime] = useState("");
+  const [interviewLink, setInterviewLink] = useState("");
   const [interviewNotes, setInterviewNotes] = useState("");
 
   useEffect(() => {
@@ -103,26 +104,37 @@ const JobApplications = () => {
   const updateApplicationStatus = async (
     applicationId,
     newStatus,
-    additionalData = {}
+    additionalData = {},
   ) => {
     try {
       const token = getAuthToken();
 
-      const response = await updateJobApplicationStatus(jobId,applicationId,newStatus,additionalData)
-      
-      
-    
+      const response = await updateJobApplicationStatus(
+        jobId,
+        applicationId,
+        newStatus,
+        additionalData,
+      );
 
-    
-
-      // if (selectedCandidate && selectedCandidate._id === applicationId) {
-      //   setSelectedCandidate((prev) => ({
-      //     ...prev,
-      //     employApplicantStatus: newStatus,
-      //   }));
-      // }
-
-      // return true;
+      if (
+        response &&
+        (response.status === 200 ||
+          response.status === 201 ||
+          response.data ||
+          response.success !== false)
+      ) {
+        if (selectedCandidate && selectedCandidate._id === applicationId) {
+          setSelectedCandidate((prev) => ({
+            ...prev,
+            employApplicantStatus: newStatus,
+            ...additionalData,
+          }));
+        }
+        // Force refresh of job applications to update tables/counts dynamically
+        fetchJobApplications();
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error("Error updating status:", error);
       alert("Failed to update application status");
@@ -142,6 +154,17 @@ const JobApplications = () => {
     };
 
     if (status === "Interview Scheduled") {
+      if (selectedCandidate) {
+        // Pre-fill existing data for editing
+        setInterviewDate(
+          selectedCandidate.interviewDate
+            ? selectedCandidate.interviewDate.split("T")[0]
+            : "",
+        );
+        setInterviewTime(selectedCandidate.interviewTime || "");
+        setInterviewLink(selectedCandidate.interviewLink || "");
+        setInterviewNotes(selectedCandidate.notes || "");
+      }
       setShowInterviewModal(true);
       return;
     }
@@ -153,7 +176,7 @@ const JobApplications = () => {
 
     const success = await updateApplicationStatus(
       selectedCandidate._id,
-      status
+      status,
     );
 
     if (success) {
@@ -182,17 +205,19 @@ const JobApplications = () => {
       {
         interviewDate,
         interviewTime,
+        interviewLink,
         interviewNotes,
-      }
+      },
     );
 
     if (success) {
       setShowInterviewModal(false);
       setInterviewDate("");
       setInterviewTime("");
+      setInterviewLink("");
       setInterviewNotes("");
       alert(
-        `✅ Interview scheduled for ${selectedCandidate.firstName} on ${interviewDate} at ${interviewTime}`
+        `✅ Interview scheduled for ${selectedCandidate.firstName} on ${interviewDate} at ${interviewTime}`,
       );
     }
   };
@@ -242,7 +267,8 @@ const JobApplications = () => {
   // Get count by status
   const getStatusCount = (status) => {
     return applications.filter(
-      (app) => app.employApplicantStatus?.toLowerCase() === status.toLowerCase()
+      (app) =>
+        app.employApplicantStatus?.toLowerCase() === status.toLowerCase(),
     ).length;
   };
 
@@ -444,7 +470,7 @@ const JobApplications = () => {
                       {formatSalary(
                         job.salaryFrom,
                         job.salaryTo,
-                        job.salaryType
+                        job.salaryType,
                       )}
                     </div>
                   </div>
@@ -780,7 +806,7 @@ const JobApplications = () => {
                               </h3>
                               <span
                                 className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(
-                                  application.employApplicantStatus
+                                  application.employApplicantStatus,
                                 )}`}
                               >
                                 {application.employApplicantStatus || "Pending"}
@@ -879,7 +905,7 @@ const JobApplications = () => {
                       </h2>
                       <span
                         className={`inline-block px-3 py-1.5 rounded-full text-xs font-medium ${getStatusBadge(
-                          selectedCandidate?.employApplicantStatus
+                          selectedCandidate?.employApplicantStatus,
                         )}`}
                       >
                         {selectedCandidate?.employApplicantStatus || "Pending"}
@@ -906,6 +932,56 @@ const JobApplications = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Interview Info */}
+                    {selectedCandidate?.employApplicantStatus ===
+                      "Interview Scheduled" && (
+                      <div className="mb-5">
+                        <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                          <span>📅</span> Interview Details
+                        </h3>
+                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 space-y-2 text-sm">
+                          {selectedCandidate?.interviewDate && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-indigo-700">
+                                Date & Time:
+                              </span>
+                              <span className="font-medium text-indigo-900">
+                                {formatDate(selectedCandidate.interviewDate)}{" "}
+                                {selectedCandidate.interviewTime
+                                  ? `at ${selectedCandidate.interviewTime}`
+                                  : ""}
+                              </span>
+                            </div>
+                          )}
+                          {selectedCandidate?.interviewLink && (
+                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-indigo-100/50">
+                              <span className="text-indigo-700">
+                                Meeting Link:
+                              </span>
+                              <a
+                                href={selectedCandidate.interviewLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-indigo-600 hover:text-indigo-800 truncate max-w-[200px] text-right"
+                              >
+                                {selectedCandidate.interviewLink}
+                              </a>
+                            </div>
+                          )}
+                          {selectedCandidate?.notes && (
+                            <div className="mt-2 pt-2 border-t border-indigo-100/50">
+                              <span className="text-indigo-700 block mb-1">
+                                Notes:
+                              </span>
+                              <p className="text-indigo-900 text-xs">
+                                {selectedCandidate.notes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Contact Information */}
                     {candidateDetails && (
@@ -1104,7 +1180,12 @@ const JobApplications = () => {
                           onClick={() =>
                             handleStatusChange("Interview Scheduled")
                           }
-                          className="p-3 rounded-lg border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all"
+                          className={`p-3 rounded-lg border-2 transition-all ${
+                            selectedCandidate?.employApplicantStatus ===
+                            "Interview Scheduled"
+                              ? "bg-indigo-50 border-indigo-500 text-indigo-700"
+                              : "border-gray-200 hover:border-indigo-500 hover:bg-indigo-50"
+                          }`}
                         >
                           <div className="text-xl mb-1">📅</div>
                           <div className="text-xs font-medium">
@@ -1226,6 +1307,19 @@ const JobApplications = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                       value={interviewTime}
                       onChange={(e) => setInterviewTime(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Meeting Link (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://zoom.us/j/..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                      value={interviewLink}
+                      onChange={(e) => setInterviewLink(e.target.value)}
                     />
                   </div>
 

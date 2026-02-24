@@ -16,6 +16,13 @@ import ChatPage from "./componets/dashboard/componets/chat/ChatPage";
 import ShortListedCandidate from "./componets/dashboard/componets/candidates/ShortListedCandidate";
 import HiredCandidates from "./componets/dashboard/componets/candidates/HiredCandidates";
 import InterViewSheduledCandidate from "./componets/dashboard/componets/candidates/InterViewSheduledCandidate";
+import Interviews from "./componets/dashboard/componets/interviews/Interviews";
+import Suggested from "./componets/dashboard/componets/suggested/Suggested";
+import Team from "./componets/dashboard/componets/team/Team";
+import Analytics from "./componets/dashboard/componets/analytics/Analytics";
+import Subscription from "./componets/dashboard/componets/subscription/Subscription";
+import CompanyProfile from "./componets/dashboard/componets/company-profile/CompanyProfile";
+import Settings from "./componets/dashboard/componets/settings/Settings";
 function App() {
   return (
     <BrowserRouter>
@@ -30,11 +37,27 @@ function App() {
         <Route path="/active-jobs" element={<ActiveJobs />} />
         <Route path="/closed-jobs" element={<ClosedJobs />} />
         <Route path="/all-candidates-list" element={<AllCandidate />} />
-        <Route path="/view-candidate-details/:candidateId" element={<ViewCandidateDetails />} />
+        <Route
+          path="/view-candidate-details/:candidateId"
+          element={<ViewCandidateDetails />}
+        />
         <Route path="/chat-page" element={<ChatPage />} />
-        <Route path="/short-listed-candidate" element={<ShortListedCandidate />} />
-         <Route path="/hired-candidate" element={<HiredCandidates />} />
-          <Route path="/interview-sheduled-candidate" element={<InterViewSheduledCandidate />} />
+        <Route
+          path="/short-listed-candidate"
+          element={<ShortListedCandidate />}
+        />
+        <Route path="/hired-candidate" element={<HiredCandidates />} />
+        <Route
+          path="/interview-sheduled-candidate"
+          element={<InterViewSheduledCandidate />}
+        />
+        <Route path="/interviews" element={<Interviews />} />
+        <Route path="/suggested" element={<Suggested />} />
+        <Route path="/team" element={<Team />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/company-profile" element={<CompanyProfile />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
       <ToastContainer
         position="top-right"

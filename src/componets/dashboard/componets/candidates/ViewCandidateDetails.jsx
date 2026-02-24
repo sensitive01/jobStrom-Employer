@@ -48,7 +48,7 @@ const ViewCandidateDetails = () => {
   };
 
   const toggleChat = async() => {
-    // const response = await createAchatRoom(candidateId,employerId)
+    const response = await createAchatRoom(candidateId,employerId)
     setIsChatOpen(!isChatOpen);
   };
 

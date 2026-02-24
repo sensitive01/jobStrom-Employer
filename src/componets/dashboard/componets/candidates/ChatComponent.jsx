@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { sendMessage } from "../../../../api/service/employerService";
+// import { sendMessage } from "../../../../api/service/employerService";
 
 const ChatComponent = ({ candidateId, candidateName, onClose }) => {
   const [messages, setMessages] = useState([]);
@@ -78,7 +78,7 @@ const ChatComponent = ({ candidateId, candidateName, onClose }) => {
 
     try {
      
-      await sendMessage(messageData);
+      // await sendMessage(messageData);
 
       // Add message to local state immediately for better UX
       setMessages((prev) => [

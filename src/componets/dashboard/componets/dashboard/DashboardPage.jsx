@@ -1,143 +1,383 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import MainLayout from "../../layout/MainLayout";
+import { getDashboardData } from "../../../../api/service/employerService";
+import { useNavigate } from "react-router-dom";
 
 const DashboardPage = () => {
+  const employerId = localStorage.getItem("userId");
+  const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState({
+    activeJobCount: 0,
+    totalApplicationCount: 0,
+    hiredCount: 0,
+    recentApplication: null,
+  });
+
+  const savedData = localStorage.getItem("employerData");
+  const employerData = savedData ? JSON.parse(savedData) : null;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!employerId) return;
+        const response = await getDashboardData(employerId);
+        if (response?.data?.data) {
+          setDashboardData(response.data.data);
+        } else if (response?.data) {
+          setDashboardData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+    fetchData();
+  }, [employerId]);
+
+  const recentApps = dashboardData.recentApplication
+    ? Array.isArray(dashboardData.recentApplication)
+      ? dashboardData.recentApplication
+      : [dashboardData.recentApplication]
+    : [];
+
   return (
     <MainLayout>
-      {/* Dashboard Content */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
-        <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
-      </div>
+      <div className="max-w-7xl mx-auto space-y-8 p-2">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">
+              Welcome back, {employerData?.contactPerson || "Employer"}
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Overview of your hiring pipeline and active jobs.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/post-new-job")}
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+          >
+            Post New Job
+          </button>
+        </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total Jobs</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">24</p>
-              <p className="text-green-500 text-sm mt-2">↑ 12% from last month</p>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Active Jobs */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Active Jobs
+                </p>
+                <h3 className="text-2xl font-bold text-slate-900 mt-0.5">
+                  {dashboardData.activeJobCount}
+                </h3>
+              </div>
             </div>
-            <div className="bg-purple-100 p-3 rounded-lg">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
+          </div>
+
+          {/* Total Applicants */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Total Applicants
+                </p>
+                <h3 className="text-2xl font-bold text-slate-900 mt-0.5">
+                  {dashboardData.totalApplicationCount}
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          {/* Unread Messages */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-pink-50 flex items-center justify-center text-pink-600">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Unread Messages
+                </p>
+                <h3 className="text-2xl font-bold text-slate-900 mt-0.5">0</h3>
+              </div>
+            </div>
+          </div>
+
+          {/* Hired This Month */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Hired This Month
+                </p>
+                <h3 className="text-2xl font-bold text-slate-900 mt-0.5">
+                  {dashboardData.hiredCount}
+                </h3>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Applications</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">156</p>
-              <p className="text-green-500 text-sm mt-2">↑ 8% from last month</p>
+        {/* Main Content Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
+          {/* Recent Applicants */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
+                Recent Applicants
+              </h3>
+              <button
+                onClick={() => navigate("/all-job-list")}
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700 cursor-pointer"
+              >
+                View All
+              </button>
             </div>
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total Candidates</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">892</p>
-              <p className="text-green-500 text-sm mt-2">↑ 23% from last month</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-lg">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 font-medium text-slate-500">
+                      <th className="px-6 py-4 font-medium">Candidate</th>
+                      <th className="px-6 py-4 font-medium">Applied For</th>
+                      <th className="px-6 py-4 font-medium">Date</th>
+                      <th className="px-6 py-4 font-medium">Status</th>
+                      <th className="px-6 py-4 font-medium text-center">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentApps.length > 0 ? (
+                      recentApps.map((app, index) => (
+                        <tr
+                          key={index}
+                          className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors pointer-events-auto"
+                        >
+                          <td className="px-6 py-4">
+                            <span className="font-medium text-slate-900">
+                              {app.candidate?.firstName || "Unknown"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-slate-600">{app.jobTitle}</div>
+                            {app.jobId && (
+                              <div className="text-xs text-slate-400 mt-0.5">
+                                ID: {app.jobId}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-slate-500">
+                              {new Date(app.appliedDate).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-0.5">
+                              {new Date(app.appliedDate).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" },
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                app.candidate?.employApplicantStatus ===
+                                "Selected"
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : app.candidate?.employApplicantStatus ===
+                                      "Rejected"
+                                    ? "bg-red-50 text-red-600"
+                                    : (app.candidate?.employApplicantStatus ||
+                                          app.candidate?.status) === "Applied"
+                                      ? "bg-blue-50 text-blue-600"
+                                      : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {app.candidate?.employApplicantStatus ||
+                                app.candidate?.status ||
+                                "Applied"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() =>
+                                navigate(`/preview-job/${app._id}`)
+                              }
+                              className="text-[#3b28cc] hover:text-[#2d1e99] font-medium text-sm transition-colors cursor-pointer"
+                            >
+                              Review
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="px-6 py-12 text-center text-slate-500 pb-20 pt-20 border-b border-slate-100"
+                        >
+                          <p className="mt-4">
+                            No applicants yet. Post a job to get started!
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Shortlisted</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">42</p>
-              <p className="text-green-500 text-sm mt-2">↑ 5% from last month</p>
-            </div>
-            <div className="bg-yellow-100 p-3 rounded-lg">
-              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800">Recent Applications</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {[
-                { name: "John Doe", position: "Frontend Developer", time: "2 hours ago" },
-                { name: "Jane Smith", position: "UI/UX Designer", time: "5 hours ago" },
-                { name: "Mike Johnson", position: "Backend Developer", time: "1 day ago" },
-                { name: "Sarah Williams", position: "Product Manager", time: "2 days ago" }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold">
-                      {item.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">{item.name}</p>
-                      <p className="text-sm text-gray-500">{item.position}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-500">{item.time}</span>
+          {/* Quick Actions */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-slate-900">Quick Actions</h3>
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-3 grid gap-2">
+              <button
+                onClick={() => navigate("/post-new-job")}
+                className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors text-left border-b border-slate-50 last:border-0"
+              >
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 text-indigo-600">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800">Active Jobs</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {[
-                { title: "Frontend Developer", applications: 45, views: 234 },
-                { title: "Backend Developer", applications: 32, views: 189 },
-                { title: "UI/UX Designer", applications: 28, views: 156 },
-                { title: "Product Manager", applications: 19, views: 98 }
-              ].map((job, index) => (
-                <div key={index} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-semibold text-gray-800">{job.title}</p>
-                    <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">Active</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      {job.views} views
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      {job.applications} applications
-                    </span>
-                  </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    Post a Job
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Create a new job listing
+                  </p>
                 </div>
-              ))}
+              </button>
+
+              <button
+                onClick={() => navigate("/all-candidates-list")}
+                className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors text-left border-b border-slate-50 last:border-0"
+              >
+                <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center flex-shrink-0 text-pink-600">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    Search Candidates
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Find talent directly
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigate("/analytics")}
+                className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors text-left border-b border-slate-50 last:border-0"
+              >
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    View Analytics
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Check performance stats
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
