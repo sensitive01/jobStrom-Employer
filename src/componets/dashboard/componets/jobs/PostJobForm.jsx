@@ -46,6 +46,7 @@ const PostJobPage = () => {
     applicationInstructions: "",
     location: "",
     companyAddress: "",
+    region: "",
   });
 
   useEffect(() => {
@@ -76,6 +77,7 @@ const PostJobPage = () => {
               applicationInstructions: jobData.applicationInstructions || "",
               location: jobData.location || "",
               companyAddress: jobData.companyAddress || "",
+              region: jobData.region || "",
             });
 
             // Set array fields
@@ -83,15 +85,15 @@ const PostJobPage = () => {
             setResponsibilities(
               Array.isArray(jobData.responsibilities)
                 ? jobData.responsibilities
-                : []
+                : [],
             );
             setQualifications(
               Array.isArray(jobData.qualifications)
                 ? jobData.qualifications
-                : []
+                : [],
             );
             setLocationTypes(
-              Array.isArray(jobData.locationTypes) ? jobData.locationTypes : []
+              Array.isArray(jobData.locationTypes) ? jobData.locationTypes : [],
             );
             setIsRemote(jobData.isRemote || false);
             setIsEditMode(true);
@@ -220,6 +222,11 @@ const PostJobPage = () => {
       return;
     }
 
+    if (!formData.region) {
+      toast.error("Region is required");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -257,7 +264,7 @@ const PostJobPage = () => {
       toast.error(
         isEditMode
           ? "An error occurred while updating the job"
-          : "An error occurred while posting the job"
+          : "An error occurred while posting the job",
       );
     } finally {
       setLoading(false);
@@ -789,19 +796,41 @@ const PostJobPage = () => {
             {/* Location Tab */}
             {activeTab === "location" && (
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Location <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="City, State/Province"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Location <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      placeholder="City, State/Province"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Region <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="region"
+                      value={formData.region}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                      required
+                    >
+                      <option value="">Select Region</option>
+                      <option value="INDIA">India</option>
+                      <option value="Middle East">Middle East</option>
+                      <option value="Europe">Europe</option>
+                      <option value="Asia">Asia</option>
+                      <option value="Africa">Africa</option>
+                      <option value="North America">North America</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
@@ -909,8 +938,8 @@ const PostJobPage = () => {
                   ? "Updating..."
                   : "Posting..."
                 : isEditMode
-                ? "Update"
-                : "Post"}
+                  ? "Update"
+                  : "Post"}
             </button>
           )}
         </div>

@@ -214,14 +214,14 @@ const TopBar = ({ onMenuToggle }) => {
               aria-label="Profile menu"
             >
               <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold uppercase">
-                {employerData?.contactPerson?.charAt(0) || "A"}
+                {employerData?.companyName?.charAt(0) || "A"}
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-semibold text-gray-800">
-                  {employerData?.contactPerson || "Admin User"}
+                  {employerData?.companyName || "Employer"}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {employerData?.companyName || "Employer"}
+                  {employerData?.contactPerson || "Admin User"}
                 </p>
               </div>
               <svg

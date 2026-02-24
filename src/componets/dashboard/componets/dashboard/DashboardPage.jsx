@@ -46,7 +46,7 @@ const DashboardPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">
-              Welcome back, {employerData?.contactPerson || "Employer"}
+              Welcome back, {employerData?.companyName || "Employer"}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
               Overview of your hiring pipeline and active jobs.
