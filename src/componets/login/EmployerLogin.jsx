@@ -37,7 +37,7 @@ const EmployerLogin = () => {
     try {
       const response = await loginEmployer(
         formData.username,
-        formData.password
+        formData.password,
       );
 
       if (response.status === 200) {
@@ -46,6 +46,14 @@ const EmployerLogin = () => {
         if (response?.status === 200) {
           localStorage.setItem("token", response?.data.token);
           localStorage.setItem("userId", response?.data.user?._id);
+          localStorage.setItem(
+            "companyName",
+            response?.data.user?.companyName || "",
+          );
+          localStorage.setItem(
+            "companyLogo",
+            response?.data.user?.userProfilePic || "",
+          );
         }
 
         // Reset form

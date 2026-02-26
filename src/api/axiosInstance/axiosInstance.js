@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const axiosInstance = axios.create({
-  baseURL: ` ${import.meta.env.VITE_BASE_ROUTE_JOBSTORM}`,
+  baseURL: `${import.meta.env.VITE_BASE_ROUTE_JOBSTORM}`,
 });
 
 axiosInstance.interceptors.request.use(

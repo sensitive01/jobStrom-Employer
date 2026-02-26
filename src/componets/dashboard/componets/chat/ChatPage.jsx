@@ -1,303 +1,232 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import MainLayout from "../../layout/MainLayout";
+import { axiosInstance } from "../../../../api/axiosInstance/axiosInstance";
+import io from "socket.io-client";
 
-// Dummy chat data for employer dashboard
-const dummyChats = [
-  {
-    id: 1,
-    candidateName: "Sarah Johnson",
-    avatar: "SJ",
-    jobTitle: "React Developer",
-    jobId: "JS43529",
-    lastMessage: "Thank you for considering my application!",
-    time: "2 min ago",
-    unread: 2,
-    online: true,
-    applicationStatus: "Under Review",
-    messages: [
-      {
-        id: 1,
-        sender: "Sarah Johnson",
-        text: "Hello! I recently applied for the React Developer position.",
-        time: "10:30 AM",
-        isMine: false,
-      },
-      {
-        id: 2,
-        sender: "You",
-        text: "Hi Sarah! Thanks for applying. We received your application and are reviewing it.",
-        time: "10:32 AM",
-        isMine: true,
-      },
-      {
-        id: 3,
-        sender: "Sarah Johnson",
-        text: "Great! I have 4 years of experience with React and Next.js.",
-        time: "10:35 AM",
-        isMine: false,
-      },
-      {
-        id: 4,
-        sender: "You",
-        text: "That's excellent. We'll get back to you within 2-3 business days.",
-        time: "10:36 AM",
-        isMine: true,
-      },
-      {
-        id: 5,
-        sender: "Sarah Johnson",
-        text: "Thank you for considering my application!",
-        time: "10:38 AM",
-        isMine: false,
-      },
-    ],
-  },
-  {
-    id: 2,
-    candidateName: "Michael Chen",
-    avatar: "MC",
-    jobTitle: "Flutter Developer",
-    jobId: "JS97020",
-    lastMessage: "When can I expect to hear back?",
-    time: "15 min ago",
-    unread: 1,
-    online: true,
-    applicationStatus: "Shortlisted",
-    messages: [
-      {
-        id: 1,
-        sender: "Michael Chen",
-        text: "Hi, I submitted my portfolio along with the application.",
-        time: "9:15 AM",
-        isMine: false,
-      },
-      {
-        id: 2,
-        sender: "You",
-        text: "Hello Michael! Yes, we reviewed your portfolio. Very impressive work!",
-        time: "9:20 AM",
-        isMine: true,
-      },
-      {
-        id: 3,
-        sender: "Michael Chen",
-        text: "Thank you! When can I expect to hear back?",
-        time: "9:22 AM",
-        isMine: false,
-      },
-    ],
-  },
-  {
-    id: 3,
-    candidateName: "Emily Rodriguez",
-    avatar: "ER",
-    jobTitle: "Digital Marketing Specialist",
-    jobId: "JS98558",
-    lastMessage: "I have experience in SEO and social media marketing.",
-    time: "1 hour ago",
-    unread: 0,
-    online: false,
-    applicationStatus: "Applied",
-    messages: [
-      {
-        id: 1,
-        sender: "Emily Rodriguez",
-        text: "Hi! I'm very interested in the Digital Marketing position.",
-        time: "8:00 AM",
-        isMine: false,
-      },
-      {
-        id: 2,
-        sender: "You",
-        text: "Hello Emily! Great to hear from you.",
-        time: "8:10 AM",
-        isMine: true,
-      },
-      {
-        id: 3,
-        sender: "Emily Rodriguez",
-        text: "I have experience in SEO and social media marketing.",
-        time: "8:15 AM",
-        isMine: false,
-      },
-    ],
-  },
-  {
-    id: 4,
-    candidateName: "David Park",
-    avatar: "DP",
-    jobTitle: "Flutter Developer",
-    jobId: "JS97020",
-    lastMessage: "Looking forward to the interview.",
-    time: "2 hours ago",
-    unread: 0,
-    online: false,
-    applicationStatus: "Interview Scheduled",
-    messages: [
-      {
-        id: 1,
-        sender: "David Park",
-        text: "Hello, I received the interview invitation.",
-        time: "7:30 AM",
-        isMine: false,
-      },
-      {
-        id: 2,
-        sender: "You",
-        text: "Hi David! Yes, the interview is scheduled for Thursday at 2 PM.",
-        time: "7:45 AM",
-        isMine: true,
-      },
-      {
-        id: 3,
-        sender: "David Park",
-        text: "Looking forward to the interview.",
-        time: "7:50 AM",
-        isMine: false,
-      },
-    ],
-  },
-  {
-    id: 5,
-    candidateName: "Lisa Thompson",
-    avatar: "LT",
-    jobTitle: "React Developer",
-    jobId: "JS43529",
-    lastMessage: "Can you share more details about the role?",
-    time: "3 hours ago",
-    unread: 3,
-    online: true,
-    applicationStatus: "Applied",
-    messages: [
-      {
-        id: 1,
-        sender: "Lisa Thompson",
-        text: "Hi, I'm interested in the React Developer role.",
-        time: "6:00 AM",
-        isMine: false,
-      },
-      {
-        id: 2,
-        sender: "Lisa Thompson",
-        text: "Can you share more details about the role?",
-        time: "6:05 AM",
-        isMine: false,
-      },
-    ],
-  },
-  {
-    id: 6,
-    candidateName: "James Wilson",
-    avatar: "JW",
-    jobTitle: "Digital Marketing Specialist",
-    jobId: "JS98558",
-    lastMessage: "Thank you for the update!",
-    time: "Yesterday",
-    unread: 0,
-    online: false,
-    applicationStatus: "Rejected",
-    messages: [
-      {
-        id: 1,
-        sender: "James Wilson",
-        text: "Hi, what's the status of my application?",
-        time: "Yesterday",
-        isMine: false,
-      },
-      {
-        id: 2,
-        sender: "You",
-        text: "Hello James, we appreciate your interest but decided to move forward with other candidates.",
-        time: "Yesterday",
-        isMine: true,
-      },
-      {
-        id: 3,
-        sender: "James Wilson",
-        text: "Thank you for the update!",
-        time: "Yesterday",
-        isMine: false,
-      },
-    ],
-  },
-  {
-    id: 7,
-    candidateName: "Priya Sharma",
-    avatar: "PS",
-    jobTitle: "React Developer",
-    jobId: "JS43529",
-    lastMessage: "I can start immediately if selected.",
-    time: "Yesterday",
-    unread: 0,
-    online: true,
-    applicationStatus: "Under Review",
-    messages: [
-      {
-        id: 1,
-        sender: "Priya Sharma",
-        text: "Hello! I have 5 years of React experience.",
-        time: "Yesterday",
-        isMine: false,
-      },
-      {
-        id: 2,
-        sender: "Priya Sharma",
-        text: "I can start immediately if selected.",
-        time: "Yesterday",
-        isMine: false,
-      },
-    ],
-  },
-];
+const SOCKET_URL = import.meta.env.VITE_BASE_ROUTE_JOBSTORM.replace(
+  /\/employer\/?$/,
+  "",
+);
 
 const ChatPage = () => {
-  const [selectedChat, setSelectedChat] = useState(dummyChats[0]);
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("All");
   const [showMobileList, setShowMobileList] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (messageInput.trim()) {
-      console.log("Sending message:", messageInput);
-      setMessageInput("");
+  const employerId = localStorage.getItem("userId");
+  const employerName = localStorage.getItem("companyName") || "Employer";
+  const employerImage = localStorage.getItem("companyLogo") || "";
+
+  const socketRef = useRef();
+  const chatMessagesRef = useRef(null);
+  const selectedChatRef = useRef(null);
+
+  const scrollToBottom = () => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
     }
   };
 
-  const filteredChats = dummyChats.filter((chat) => {
-    const matchesSearch =
-      chat.candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      chat.jobTitle.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      filterStatus === "All" || chat.applicationStatus === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
 
-  const handleChatSelect = (chat) => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedChat?.messages]);
+
+  useEffect(() => {
+    socketRef.current = io(SOCKET_URL);
+
+    socketRef.current.on("receive_chat_message", (data) => {
+      setChats((prevChats) => {
+        return prevChats.map((chat) => {
+          if (chat._id === data.room) {
+            const isSelected = selectedChatRef.current?._id === data.room;
+            const newMessages = [...(chat.messages || []), data.messageData];
+
+            if (isSelected) {
+              axiosInstance
+                .post("/chat/mark-read", {
+                  employerId,
+                  employeeId: chat.employeeId,
+                  jobId: chat.jobId || null,
+                  viewerType: "employer",
+                })
+                .catch(console.error);
+            }
+
+            return {
+              ...chat,
+              messages: newMessages,
+              lastMessage: data.messageData.message,
+              lastMessageTime: new Date().toISOString(),
+              unreadCountEmployer: isSelected
+                ? 0
+                : (chat.unreadCountEmployer || 0) + 1,
+            };
+          }
+          return chat;
+        });
+      });
+
+      setSelectedChat((prev) => {
+        if (prev && prev._id === data.room) {
+          return {
+            ...prev,
+            messages: [...(prev.messages || []), data.messageData],
+          };
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, [employerId]);
+
+  const fetchChats = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get(`/chat/employer/${employerId}`);
+      if (res.data.success) {
+        setChats(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [employerId]);
+
+  useEffect(() => {
+    if (employerId) {
+      fetchChats();
+    }
+  }, [employerId, fetchChats]);
+
+  const handleChatSelect = async (chat) => {
+    console.log("Selecting chat:", chat);
     setSelectedChat(chat);
     setShowMobileList(false);
+    socketRef.current.emit("join_chat_room", chat._id);
+
+    // Reset unread count locally
+    setChats((prev) =>
+      prev.map((c) =>
+        c._id === chat._id ? { ...c, unreadCountEmployer: 0 } : c,
+      ),
+    );
+
+    // Mark as read on server
+    axiosInstance
+      .post("/chat/mark-read", {
+        employerId,
+        employeeId: chat.employeeId,
+        jobId: chat.jobId || null,
+        viewerType: "employer",
+      })
+      .catch(console.error);
+
+    // Fetch full message history for this chat
+    try {
+      console.log(
+        "Fetching messages for chat between",
+        employerId,
+        "and",
+        chat.employeeId,
+      );
+      const res = await axiosInstance.get("/chat/messages", {
+        params: {
+          employeeId: chat.employeeId,
+          employerId,
+          jobId:
+            typeof chat.jobId === "object"
+              ? chat.jobId._id
+              : chat.jobId || undefined,
+        },
+      });
+      console.log("Messages fetch result:", res.data);
+      if (res.data.success) {
+        setSelectedChat((prev) => ({
+          ...prev,
+          messages: res.data.data.messages || [],
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to load chat messages:", err);
+    }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Shortlisted":
-      case "Interview Scheduled":
-        return "bg-emerald-50 text-emerald-700 border-emerald-100";
-      case "Under Review":
-      case "Applied":
-        return "bg-indigo-50 text-indigo-700 border-indigo-100";
-      case "Rejected":
-        return "bg-rose-50 text-rose-700 border-rose-100";
-      default:
-        return "bg-slate-100 text-slate-600 border-slate-200";
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!messageInput.trim() || !selectedChat) return;
+
+    const messageData = {
+      employerId,
+      employeeId: selectedChat.employeeId,
+      jobId: selectedChat.jobId || null,
+      message: messageInput.trim(),
+      sender: "employer",
+      employerName,
+      employerImage,
+      employeeName: selectedChat.employeeName,
+      employeeImage: selectedChat.employeeImage,
+    };
+
+    try {
+      const resp = await axiosInstance.post("/sendchats", messageData);
+
+      if (resp.data.success) {
+        const newMessage = resp.data.data.message;
+
+        const updatedMessages = [...(selectedChat.messages || []), newMessage];
+        const updatedChat = {
+          ...selectedChat,
+          messages: updatedMessages,
+          lastMessage: newMessage.message,
+          lastMessageTime: new Date().toISOString(),
+        };
+
+        setSelectedChat(updatedChat);
+        setChats((prev) =>
+          prev.map((c) => (c._id === selectedChat._id ? updatedChat : c)),
+        );
+
+        socketRef.current.emit("send_chat_message", {
+          room: selectedChat._id,
+          messageData: newMessage,
+        });
+
+        setMessageInput("");
+      }
+    } catch (error) {
+      console.error("Failed to send message", error);
     }
+  };
+
+  const filteredChats = chats.filter((chat) => {
+    const matchesSearch =
+      (chat.employeeName || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (chat.jobTitle || "").toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const formatTime = (time) => {
+    if (!time) return "";
+    const date = new Date(time);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
     <MainLayout>
-      <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] lg:h-[calc(100vh-80px)] bg-slate-50 overflow-hidden rounded-2xl border border-slate-100 shadow-sm">
-        {/* Page Header - Hidden on mobile when chat is open */}
+      <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] lg:h-[calc(100vh-80px)] bg-slate-50 overflow-hidden rounded-2xl border border-slate-100 shadow-sm mt-4">
         <div
           className={`bg-white px-4 sm:px-6 py-4 border-b border-slate-100 ${!showMobileList ? "hidden md:block" : ""}`}
         >
@@ -313,13 +242,10 @@ const ChatPage = () => {
           </div>
         </div>
 
-        {/* Chat Container */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Sidebar - Chat List */}
           <div
             className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-80 lg:w-96 bg-white border-r border-slate-100 flex-col transition-all duration-300`}
           >
-            {/* Search and Filter */}
             <div className="p-4 border-b border-slate-100 space-y-3 bg-white">
               <div className="relative">
                 <svg
@@ -343,157 +269,229 @@ const ChatPage = () => {
                   className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
                 />
               </div>
-
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                {[
-                  "All",
-                  "Applied",
-                  "Under Review",
-                  "Shortlisted",
-                  "Interview Scheduled",
-                ].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setFilterStatus(status)}
-                    className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl whitespace-nowrap transition-all border ${
-                      filterStatus === status
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100"
-                        : "bg-white text-slate-400 border-slate-100 hover:border-slate-300"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
             </div>
 
-            {/* Chat List */}
             <div className="flex-1 overflow-y-auto bg-slate-50/30">
-              {filteredChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => handleChatSelect(chat)}
-                  className={`p-4 border-b border-slate-50 cursor-pointer transition-all hover:bg-white ${
-                    selectedChat?.id === chat.id
-                      ? "bg-white border-r-4 border-r-indigo-600 shadow-sm z-10"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-100">
-                        {chat.avatar}
-                      </div>
-                      {chat.online && (
-                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-0.5">
-                        <h3 className="font-bold text-slate-800 truncate text-sm tracking-tight uppercase">
-                          {chat.candidateName}
-                        </h3>
-                        <span className="text-[9px] font-bold text-slate-400 ml-2 flex-shrink-0 uppercase tracking-tighter">
-                          {chat.time}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-tighter">
-                          {chat.jobTitle}
-                        </p>
+              {loading ? (
+                <div className="text-center p-4 text-slate-400">
+                  Loading chats...
+                </div>
+              ) : filteredChats.length === 0 ? (
+                <div className="text-center p-4 text-slate-400">
+                  No conversations found
+                </div>
+              ) : (
+                filteredChats.map((chat) => (
+                  <div
+                    key={chat._id}
+                    onClick={() => handleChatSelect(chat)}
+                    className={`p-4 border-b border-slate-50 cursor-pointer transition-all hover:bg-white ${
+                      selectedChat?._id === chat._id
+                        ? "bg-white border-r-4 border-r-indigo-600 shadow-sm z-10"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-100 overflow-hidden">
+                          {chat.employeeImage ? (
+                            <img
+                              src={chat.employeeImage}
+                              alt="C"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            chat.employeeName?.charAt(0) || "C"
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2">
-                        <p
-                          className={`text-xs truncate flex-1 font-medium ${chat.unread > 0 ? "text-slate-900" : "text-slate-500"}`}
-                        >
-                          {chat.lastMessage}
-                        </p>
-                        {chat.unread > 0 && (
-                          <span className="flex-shrink-0 w-4 h-4 bg-rose-600 text-white text-[9px] font-black rounded-lg flex items-center justify-center animate-pulse">
-                            {chat.unread}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-0.5">
+                          <h3 className="font-bold text-slate-800 truncate text-sm tracking-tight uppercase">
+                            {chat.employeeName || "Candidate"}
+                          </h3>
+                          <span className="text-[9px] font-bold text-slate-400 ml-2 flex-shrink-0 uppercase tracking-tighter">
+                            {formatTime(chat.lastMessageTime)}
                           </span>
-                        )}
-                      </div>
+                        </div>
 
-                      <div className="mt-2.5">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full border ${getStatusColor(
-                            chat.applicationStatus,
-                          )}`}
-                        >
-                          {chat.applicationStatus}
-                        </span>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-tighter">
+                            {chat.jobTitle }
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <p
+                            className={`text-xs truncate flex-1 font-medium ${
+                              chat.unreadCountEmployer > 0
+                                ? "text-slate-900"
+                                : "text-slate-500"
+                            }`}
+                          >
+                            {chat.lastMessage}
+                          </p>
+                          {chat.unreadCountEmployer > 0 && (
+                            <span className="flex-shrink-0 w-4 h-4 bg-rose-600 text-white text-[9px] font-black rounded-lg flex items-center justify-center animate-pulse">
+                              {chat.unreadCountEmployer}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
-          {/* Main Chat Area */}
           <div
             className={`${!showMobileList ? "flex" : "hidden md:flex"} flex-1 flex flex-col bg-white border-l border-slate-100 relative`}
           >
-            {/* Chat Header */}
-            <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-white shadow-sm z-20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
-                  {/* Back button on mobile */}
-                  <button
-                    onClick={() => setShowMobileList(true)}
-                    className="md:hidden p-2 -ml-2 text-slate-400 hover:text-indigo-600 transition-colors"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-base sm:text-lg shadow-lg shadow-indigo-100">
-                      {selectedChat?.avatar}
-                    </div>
-                    {selectedChat?.online && (
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight uppercase truncate">
-                      {selectedChat?.candidateName}
-                    </h2>
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                      <span className="truncate">{selectedChat?.jobTitle}</span>
-                      <span>•</span>
-                      <span
-                        className={
-                          selectedChat?.online
-                            ? "text-emerald-500"
-                            : "text-slate-400"
-                        }
+            {selectedChat ? (
+              <>
+                <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-white shadow-sm z-20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                      <button
+                        onClick={() => setShowMobileList(true)}
+                        className="md:hidden p-2 -ml-2 text-slate-400 hover:text-indigo-600 transition-colors"
                       >
-                        {selectedChat?.online ? "Online" : "Offline"}
-                      </span>
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+
+                      <div className="relative flex-shrink-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-base sm:text-lg shadow-lg shadow-indigo-100 overflow-hidden">
+                          {selectedChat?.employeeImage ? (
+                            <img
+                              src={selectedChat.employeeImage}
+                              alt="C"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            selectedChat?.employeeName?.charAt(0) || "C"
+                          )}
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight uppercase truncate">
+                          {selectedChat?.employeeName || "Candidate"}
+                        </h2>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                          <span className="truncate">
+                            {selectedChat?.jobTitle || "Direct Message"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                  <button className="p-2 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
+                <div
+                  className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/50"
+                  ref={chatMessagesRef}
+                >
+                  {(selectedChat?.messages || []).map((message, i) => {
+                    const isMine = message.sender === "employer";
+                    return (
+                      <div
+                        key={message._id || i}
+                        className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`flex gap-2 sm:gap-3 max-w-[85%] sm:max-w-[75%] ${isMine ? "flex-row-reverse" : "flex-row"}`}
+                        >
+                          {!isMine && (
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white font-black text-[10px] flex-shrink-0 shadow-sm self-end overflow-hidden">
+                              {selectedChat?.employeeImage ? (
+                                <img
+                                  src={selectedChat.employeeImage}
+                                  alt="C"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                selectedChat?.employeeName?.charAt(0) || "C"
+                              )}
+                            </div>
+                          )}
+                          <div
+                            className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
+                          >
+                            <div
+                              className={`px-4 py-2.5 shadow-sm ${
+                                isMine
+                                  ? "bg-indigo-600 text-white rounded-2xl rounded-tr-none"
+                                  : "bg-white text-slate-800 border border-slate-100 rounded-2xl rounded-tl-none font-medium"
+                              }`}
+                            >
+                              <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap text-left">
+                                {message.message}
+                              </p>
+                            </div>
+                            <span className="text-[9px] font-black text-slate-400 mt-1.5 px-1 uppercase tracking-tighter">
+                              {formatTime(message.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="p-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+                  <form
+                    onSubmit={handleSendMessage}
+                    className="flex items-center gap-2 sm:gap-3 bg-slate-50 border border-slate-200 p-1.5 sm:p-2 rounded-2xl focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all"
+                  >
+                    <textarea
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      placeholder="Type a message..."
+                      rows="1"
+                      className="flex-1 bg-transparent border-none outline-none resize-none text-xs sm:text-sm text-slate-900 placeholder-slate-400 py-1.5 ml-2"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage(e);
+                        }
+                      }}
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={!messageInput.trim()}
+                      className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 disabled:opacity-50 disabled:shadow-none flex-shrink-0"
+                    >
+                      <svg
+                        className="w-5 h-5 rotate-90"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center bg-slate-50/50">
+                <div className="text-center p-8 bg-white border border-slate-100 rounded-3xl shadow-sm max-w-sm mx-auto">
+                  <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg
-                      className="w-5 h-5"
+                      className="w-8 h-8"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -502,123 +500,20 @@ const ChatPage = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                       />
                     </svg>
-                  </button>
-                  <button className="p-2 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all hidden sm:block">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                      />
-                    </svg>
-                  </button>
+                  </div>
+                  <h3 className="text-base font-black text-slate-900 tracking-tight uppercase mb-2">
+                    Your Messages
+                  </h3>
+                  <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                    Select a conversation from the sidebar to view chat history
+                    and start communicating with candidates.
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/50">
-              {selectedChat?.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.isMine ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`flex gap-2 sm:gap-3 max-w-[85%] sm:max-w-[75%] ${message.isMine ? "flex-row-reverse" : "flex-row"}`}
-                  >
-                    {!message.isMine && (
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white font-black text-[10px] flex-shrink-0 shadow-sm self-end">
-                        {selectedChat?.avatar}
-                      </div>
-                    )}
-                    <div
-                      className={`flex flex-col ${message.isMine ? "items-end" : "items-start"}`}
-                    >
-                      <div
-                        className={`px-4 py-2.5 shadow-sm ${
-                          message.isMine
-                            ? "bg-indigo-600 text-white rounded-2xl rounded-tr-none"
-                            : "bg-white text-slate-800 border border-slate-100 rounded-2xl rounded-tl-none font-medium"
-                        }`}
-                      >
-                        <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap text-left">
-                          {message.text}
-                        </p>
-                      </div>
-                      <span className="text-[9px] font-black text-slate-400 mt-1.5 px-1 uppercase tracking-tighter">
-                        {message.time}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Message Input */}
-            <div className="p-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-              <form
-                onSubmit={handleSendMessage}
-                className="flex items-center gap-2 sm:gap-3 bg-slate-50 border border-slate-200 p-1.5 sm:p-2 rounded-2xl focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all"
-              >
-                <button
-                  type="button"
-                  className="p-2 text-slate-400 hover:bg-white hover:text-indigo-600 rounded-xl transition-all flex-shrink-0"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                    />
-                  </svg>
-                </button>
-
-                <textarea
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  placeholder="Type a message..."
-                  rows="1"
-                  className="flex-1 bg-transparent border-none outline-none resize-none text-xs sm:text-sm text-slate-900 placeholder-slate-400 py-1.5"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e);
-                    }
-                  }}
-                />
-
-                <button
-                  type="submit"
-                  disabled={!messageInput.trim()}
-                  className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 disabled:opacity-50 disabled:shadow-none flex-shrink-0"
-                >
-                  <svg
-                    className="w-5 h-5 rotate-90"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                  </svg>
-                </button>
-              </form>
-            </div>
+            )}
           </div>
         </div>
       </div>
