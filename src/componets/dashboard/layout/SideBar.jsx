@@ -261,6 +261,16 @@ const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Load Employer Settings payload cached locally during init
+  const employerData = JSON.parse(localStorage.getItem("employerData") || "{}");
+  const employerImage =
+    employerData?.userProfilePic ||
+    localStorage.getItem("userProfilePic") ||
+    "";
+  const employerName =
+    employerData?.companyName || localStorage.getItem("userName") || "Employer";
+  const contactPerson = employerData?.contactPerson || "Admin User";
+
   // Lazily initialize state to prevent FOUC / CSS load flashing delay.
   // This calculates the correct active menu based on the initial pathname
   // instead of defaulting to 'dashboard' universally which causes a visual flash delay.
@@ -357,6 +367,26 @@ const Sidebar = ({ isOpen, onClose }) => {
         } lg:translate-x-0 w-64 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
       >
         <nav className="p-4">
+          <div className="flex flex-col items-center mb-8 mt-2 pb-6 border-b border-gray-100">
+            <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-2xl uppercase shadow-md mb-3 border-4 border-purple-50 relative overflow-hidden">
+              {employerImage ? (
+                <img
+                  src={employerImage}
+                  alt={employerName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                employerName?.charAt(0) || "E"
+              )}
+            </div>
+            <h3 className="font-bold text-gray-800 text-center text-sm px-2">
+              {employerName}
+            </h3>
+            <p className="text-xs text-gray-500 text-center mt-0.5">
+              {contactPerson}
+            </p>
+          </div>
+
           <div className="mb-4 px-4 text-xs font-semibold text-slate-400 tracking-wider">
             RECRUITER CONSOLE
           </div>

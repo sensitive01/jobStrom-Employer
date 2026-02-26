@@ -1,18 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-// import { sendMessage } from "../../../../api/service/employerService";
+import { axiosInstance } from "../../../../api/axiosInstance/axiosInstance";
+import io from "socket.io-client";
+
+const SOCKET_URL = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
 
 const ChatComponent = ({ candidateId, candidateName, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
-  const employerId = localStorage.getItem("userId");
-  const employerName = localStorage.getItem("userName") || "Recruiter";
+  const [chatId, setChatId] = useState(null);
 
-  // Auto scroll to bottom when new messages arrive
+  const chatMessagesRef = useRef(null);
+  const employerId = localStorage.getItem("userId");
+  const employerData = JSON.parse(localStorage.getItem("employerData") || "{}");
+  const employerName =
+    employerData?.companyName ||
+    localStorage.getItem("userName") ||
+    "Recruiter";
+  const employerImage = localStorage.getItem("userProfilePic") || "";
+
+  const socketRef = useRef();
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -21,36 +34,49 @@ const ChatComponent = ({ candidateId, candidateName, onClose }) => {
 
   // Load chat history on component mount
   useEffect(() => {
+    socketRef.current = io(SOCKET_URL);
+
+    socketRef.current.on("receive_chat_message", (data) => {
+      // Only process if it matches our current room
+      setChatId((currentChatId) => {
+        if (data.room === currentChatId) {
+          setMessages((prev) => {
+            // Deduplicate multiple socket firings protecting UI from Double-Renders
+            const isDuplicate = prev.some(
+              (msg) => msg._id === data.messageData._id,
+            );
+            if (isDuplicate) return prev;
+            return [...prev, data.messageData];
+          });
+        }
+        return currentChatId;
+      });
+    });
+
     loadChatHistory();
+
+    return () => {
+      socketRef.current.disconnect();
+    };
   }, [candidateId]);
 
   const loadChatHistory = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with your actual API call
-      // const response = await getChatHistory(employerId, candidateId);
-      // setMessages(response.data.messages || []);
+      const res = await axiosInstance.get(`/chat/messages`, {
+        params: {
+          employerId: employerId,
+          employeeId: candidateId,
+        },
+      });
 
-      // Sample messages for demonstration
-      setMessages([
-        {
-          _id: "1",
-          senderId: candidateId,
-          senderName: candidateName,
-          message: "Hello! Thank you for reviewing my application.",
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          isRecruiter: false,
-        },
-        {
-          _id: "2",
-          senderId: employerId,
-          senderName: employerName,
-          message:
-            "Hi! Your profile looks great. I'd like to discuss the position further.",
-          timestamp: new Date(Date.now() - 1800000).toISOString(),
-          isRecruiter: true,
-        },
-      ]);
+      if (res.data.success && res.data.data) {
+        setMessages(res.data.data.messages || []);
+        if (res.data.data.chatId) {
+          setChatId(res.data.data.chatId);
+          socketRef.current.emit("join_chat_room", res.data.data.chatId);
+        }
+      }
     } catch (error) {
       console.error("Error loading chat history:", error);
       toast.error("Failed to load chat history");
@@ -67,26 +93,39 @@ const ChatComponent = ({ candidateId, candidateName, onClose }) => {
     }
 
     const messageData = {
-      senderId: employerId,
-      senderName: employerName,
-      receiverId: candidateId,
-      receiverName: candidateName,
+      employeeId: candidateId,
+      employerId: employerId,
       message: newMessage.trim(),
-      timestamp: new Date().toISOString(),
-      isRecruiter: true,
+      sender: "employer",
+      employeeName: candidateName,
+      employerName: employerName,
+      employerImage: employerImage,
     };
 
     try {
-     
-      // await sendMessage(messageData);
+      const resp = await axiosInstance.post("/sendchats", messageData);
 
-      // Add message to local state immediately for better UX
-      setMessages((prev) => [
-        ...prev,
-        { ...messageData, _id: Date.now().toString() },
-      ]);
-      setNewMessage("");
-      toast.success("Message sent!");
+      if (resp.data.success) {
+        const sentMessage = resp.data.data.message;
+        const newChatId = resp.data.data.chatId;
+
+        // If this was our first message, set the room id
+        if (!chatId) {
+          setChatId(newChatId);
+          socketRef.current.emit("join_chat_room", newChatId);
+        }
+
+        // Add message to local state immediately
+        setMessages((prev) => [...prev, sentMessage]);
+
+        // Broadcast over socket
+        socketRef.current.emit("send_chat_message", {
+          room: newChatId,
+          messageData: sentMessage,
+        });
+
+        setNewMessage("");
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
@@ -149,7 +188,10 @@ const ChatComponent = ({ candidateId, candidateName, onClose }) => {
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
+      <div
+        ref={chatMessagesRef}
+        className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4"
+      >
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-gray-500">Loading messages...</div>
@@ -176,34 +218,36 @@ const ChatComponent = ({ candidateId, candidateName, onClose }) => {
           </div>
         ) : (
           <>
-            {messages.map((msg) => (
-              <div
-                key={msg._id}
-                className={`flex ${
-                  msg.isRecruiter ? "justify-end" : "justify-start"
-                }`}
-              >
+            {messages.map((msg, idx) => {
+              const isRecruiter = msg.sender === "employer";
+              return (
                 <div
-                  className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                    msg.isRecruiter
-                      ? "bg-purple-600 text-white"
-                      : "bg-white text-gray-800 shadow-sm"
+                  key={msg._id || idx}
+                  className={`flex ${
+                    isRecruiter ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed break-words">
-                    {msg.message}
-                  </p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      msg.isRecruiter ? "text-purple-200" : "text-gray-500"
+                  <div
+                    className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                      isRecruiter
+                        ? "bg-purple-600 text-white"
+                        : "bg-white text-gray-800 shadow-sm"
                     }`}
                   >
-                    {formatMessageTime(msg.timestamp)}
-                  </p>
+                    <p className="text-sm leading-relaxed break-words">
+                      {msg.message}
+                    </p>
+                    <p
+                      className={`text-xs mt-1 ${
+                        isRecruiter ? "text-purple-200" : "text-gray-500"
+                      }`}
+                    >
+                      {formatMessageTime(msg.createdAt || msg.timestamp)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
+              );
+            })}
           </>
         )}
       </div>
@@ -261,7 +305,7 @@ const ChatComponent = ({ candidateId, candidateName, onClose }) => {
           <button
             onClick={() =>
               setNewMessage(
-                "Could you share more details about your experience?"
+                "Could you share more details about your experience?",
               )
             }
             className="px-3 py-1.5 text-xs bg-purple-50 text-purple-700 rounded-full hover:bg-purple-100 transition-colors whitespace-nowrap"

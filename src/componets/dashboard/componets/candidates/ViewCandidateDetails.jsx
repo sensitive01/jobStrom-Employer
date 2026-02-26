@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import MainLayout from "../../layout/MainLayout";
-import { getCandidateDetails } from "../../../../api/service/employerService";
+import { getCandidateDetails, createAchatRoom } from "../../../../api/service/employerService";
 import accountImg from "../../../../../public/assets/images/profileImage.png";
 import ChatComponent from "./ChatComponent";
 
@@ -47,9 +47,17 @@ const ViewCandidateDetails = () => {
     }
   };
 
-  const toggleChat = async() => {
-    const response = await createAchatRoom(candidateId,employerId)
-    setIsChatOpen(!isChatOpen);
+  const toggleChat = async () => {
+    try {
+      if (!isChatOpen) {
+        // Attempt to create/load the room before opening chat
+        await createAchatRoom(employerId, candidateId);
+      }
+    } catch (error) {
+      console.error("Error creating chat room:", error);
+    } finally {
+      setIsChatOpen(!isChatOpen);
+    }
   };
 
   if (loading) {

@@ -250,3 +250,48 @@ export const getSuggestedCandidates = async (employerId) => {
     return err;
   }
 };
+export const getEmployerDetailsFull = async (employerId) => {
+  try {
+    const response = await axiosInstance.get(`/fetchemployer/${employerId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+export const updateEmployerProfile = async (employerId, updatedData) => {
+  try {
+    const response = await axiosInstance.put(
+      `/updateemployer/${employerId}`,
+      updatedData
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const uploadEmployerProfilePic = async (employerId, formData) => {
+  try {
+    const response = await axiosInstance.put(
+      `/uploadprofilepic/${employerId}`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const uploadEmployerCoverPic = async (employerId, formData) => {
+  try {
+    const response = await axiosInstance.put(
+      `/uploadcoverpic/${employerId}`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response;
+  } catch (err) {
+    return err;
+  }
+};

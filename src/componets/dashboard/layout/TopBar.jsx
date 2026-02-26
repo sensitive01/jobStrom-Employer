@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import logoImage from "../../../../public/assets/images/logo-dark.png";
 import { getEmployerData } from "../../../api/service/employerService";
 
-const TopBar = ({ onMenuToggle }) => {
+const TopBar = () => {
   const empId = localStorage.getItem("userId");
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -87,25 +87,6 @@ const TopBar = ({ onMenuToggle }) => {
       <div className="flex items-center justify-between px-6 h-full">
         {/* Left Side - Logo and Menu Toggle */}
         <div className="flex items-center gap-4">
-          <button
-            onClick={onMenuToggle}
-            className="text-gray-600 hover:text-purple-600 transition-colors lg:hidden"
-            aria-label="Toggle menu"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
           <div
             className="flex items-center cursor-pointer"
             onClick={() => navigate("/dashboard")}
@@ -213,12 +194,30 @@ const TopBar = ({ onMenuToggle }) => {
               className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors"
               aria-label="Profile menu"
             >
-              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold uppercase">
-                {employerData?.companyName?.charAt(0) || "A"}
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold uppercase overflow-hidden relative">
+                {employerData?.userProfilePic ||
+                localStorage.getItem("userProfilePic") ? (
+                  <img
+                    src={
+                      employerData?.userProfilePic ||
+                      localStorage.getItem("userProfilePic")
+                    }
+                    alt="Logo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (
+                    employerData?.companyName ||
+                    localStorage.getItem("userName") ||
+                    "A"
+                  ).charAt(0)
+                )}
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-semibold text-gray-800">
-                  {employerData?.companyName || "Employer"}
+                  {employerData?.companyName ||
+                    localStorage.getItem("userName") ||
+                    "Employer"}
                 </p>
                 <p className="text-xs text-gray-500">
                   {employerData?.contactPerson || "Admin User"}
@@ -244,7 +243,7 @@ const TopBar = ({ onMenuToggle }) => {
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
                 <button
                   onClick={() => {
-                    navigate("/profile");
+                    navigate("/company-profile");
                     setShowProfileMenu(false);
                   }}
                   className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

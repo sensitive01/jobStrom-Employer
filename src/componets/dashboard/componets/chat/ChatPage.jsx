@@ -255,6 +255,7 @@ const ChatPage = () => {
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [showMobileList, setShowMobileList] = useState(true);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -273,61 +274,56 @@ const ChatPage = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const handleChatSelect = (chat) => {
+    setSelectedChat(chat);
+    setShowMobileList(false);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Shortlisted":
       case "Interview Scheduled":
-        return "bg-green-100 text-green-600";
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
       case "Under Review":
       case "Applied":
-        return "bg-blue-100 text-blue-600";
+        return "bg-indigo-50 text-indigo-700 border-indigo-100";
       case "Rejected":
-        return "bg-red-100 text-red-600";
+        return "bg-rose-50 text-rose-700 border-rose-100";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-slate-100 text-slate-600 border-slate-200";
     }
   };
 
   return (
     <MainLayout>
-      <div className="flex flex-col h-full bg-gray-50">
-        {/* Page Header */}
-        <div className="bg-white px-6 py-4 border-b border-gray-200">
+      <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] lg:h-[calc(100vh-80px)] bg-slate-50 overflow-hidden rounded-2xl border border-slate-100 shadow-sm">
+        {/* Page Header - Hidden on mobile when chat is open */}
+        <div
+          className={`bg-white px-4 sm:px-6 py-4 border-b border-slate-100 ${!showMobileList ? "hidden md:block" : ""}`}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-xl font-black text-slate-900 tracking-tight uppercase">
+                Messages
+              </h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                 Communicate with your candidates
               </p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              New Message
-            </button>
           </div>
         </div>
 
         {/* Chat Container */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
           {/* Sidebar - Chat List */}
-          <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
+          <div
+            className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-80 lg:w-96 bg-white border-r border-slate-100 flex-col transition-all duration-300`}
+          >
             {/* Search and Filter */}
-            <div className="p-4 border-b border-gray-200 space-y-3">
+            <div className="p-4 border-b border-slate-100 space-y-3 bg-white">
               <div className="relative">
                 <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -344,11 +340,11 @@ const ChatPage = () => {
                   placeholder="Search candidates..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
                 />
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 {[
                   "All",
                   "Applied",
@@ -359,10 +355,10 @@ const ChatPage = () => {
                   <button
                     key={status}
                     onClick={() => setFilterStatus(status)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
+                    className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl whitespace-nowrap transition-all border ${
                       filterStatus === status
-                        ? "bg-purple-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100"
+                        : "bg-white text-slate-400 border-slate-100 hover:border-slate-300"
                     }`}
                   >
                     {status}
@@ -372,62 +368,60 @@ const ChatPage = () => {
             </div>
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-slate-50/30">
               {filteredChats.map((chat) => (
                 <div
                   key={chat.id}
-                  onClick={() => setSelectedChat(chat)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer transition-all hover:bg-gray-50 ${
-                    selectedChat.id === chat.id
-                      ? "bg-purple-50 border-l-4 border-l-purple-600"
+                  onClick={() => handleChatSelect(chat)}
+                  className={`p-4 border-b border-slate-50 cursor-pointer transition-all hover:bg-white ${
+                    selectedChat?.id === chat.id
+                      ? "bg-white border-r-4 border-r-indigo-600 shadow-sm z-10"
                       : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-semibold text-lg">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-100">
                         {chat.avatar}
                       </div>
                       {chat.online && (
-                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate">
+                      <div className="flex items-start justify-between mb-0.5">
+                        <h3 className="font-bold text-slate-800 truncate text-sm tracking-tight uppercase">
                           {chat.candidateName}
                         </h3>
-                        <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                        <span className="text-[9px] font-bold text-slate-400 ml-2 flex-shrink-0 uppercase tracking-tighter">
                           {chat.time}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-xs text-gray-500 truncate">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-tighter">
                           {chat.jobTitle}
                         </p>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-400">
-                          {chat.jobId}
-                        </span>
                       </div>
 
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm text-gray-600 truncate flex-1">
+                        <p
+                          className={`text-xs truncate flex-1 font-medium ${chat.unread > 0 ? "text-slate-900" : "text-slate-500"}`}
+                        >
                           {chat.lastMessage}
                         </p>
                         {chat.unread > 0 && (
-                          <span className="flex-shrink-0 w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                          <span className="flex-shrink-0 w-4 h-4 bg-rose-600 text-white text-[9px] font-black rounded-lg flex items-center justify-center animate-pulse">
                             {chat.unread}
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-2">
+                      <div className="mt-2.5">
                         <span
-                          className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(
-                            chat.applicationStatus
+                          className={`inline-block px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full border ${getStatusColor(
+                            chat.applicationStatus,
                           )}`}
                         >
                           {chat.applicationStatus}
@@ -441,45 +435,65 @@ const ChatPage = () => {
           </div>
 
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col bg-white">
+          <div
+            className={`${!showMobileList ? "flex" : "hidden md:flex"} flex-1 flex flex-col bg-white border-l border-slate-100 relative`}
+          >
             {/* Chat Header */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-white">
+            <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-white shadow-sm z-20">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-semibold text-lg">
-                      {selectedChat.avatar}
+                <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                  {/* Back button on mobile */}
+                  <button
+                    onClick={() => setShowMobileList(true)}
+                    className="md:hidden p-2 -ml-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  <div className="relative flex-shrink-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-base sm:text-lg shadow-lg shadow-indigo-100">
+                      {selectedChat?.avatar}
                     </div>
-                    {selectedChat.online && (
-                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
+                    {selectedChat?.online && (
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                     )}
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      {selectedChat.candidateName}
+                  <div className="min-w-0">
+                    <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight uppercase truncate">
+                      {selectedChat?.candidateName}
                     </h2>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span>{selectedChat.jobTitle}</span>
-                      <span>•</span>
-                      <span>{selectedChat.jobId}</span>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                      <span className="truncate">{selectedChat?.jobTitle}</span>
                       <span>•</span>
                       <span
                         className={
-                          selectedChat.online
-                            ? "text-green-500"
-                            : "text-gray-400"
+                          selectedChat?.online
+                            ? "text-emerald-500"
+                            : "text-slate-400"
                         }
                       >
-                        {selectedChat.online ? "Online" : "Offline"}
+                        {selectedChat?.online ? "Online" : "Offline"}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <button className="p-2 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
                     <svg
-                      className="w-5 h-5 text-gray-600"
+                      className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -492,24 +506,9 @@ const ChatPage = () => {
                       />
                     </svg>
                   </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button className="p-2 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all hidden sm:block">
                     <svg
-                      className="w-5 h-5 text-gray-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <svg
-                      className="w-5 h-5 text-gray-600"
+                      className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -527,8 +526,8 @@ const ChatPage = () => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-              {selectedChat.messages.map((message) => (
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/50">
+              {selectedChat?.messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${
@@ -536,32 +535,28 @@ const ChatPage = () => {
                   }`}
                 >
                   <div
-                    className={`flex gap-3 max-w-2xl ${
-                      message.isMine ? "flex-row-reverse" : "flex-row"
-                    }`}
+                    className={`flex gap-2 sm:gap-3 max-w-[85%] sm:max-w-[75%] ${message.isMine ? "flex-row-reverse" : "flex-row"}`}
                   >
                     {!message.isMine && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                        {selectedChat.avatar}
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white font-black text-[10px] flex-shrink-0 shadow-sm self-end">
+                        {selectedChat?.avatar}
                       </div>
                     )}
                     <div
-                      className={`flex flex-col ${
-                        message.isMine ? "items-end" : "items-start"
-                      }`}
+                      className={`flex flex-col ${message.isMine ? "items-end" : "items-start"}`}
                     >
                       <div
-                        className={`px-4 py-3 rounded-2xl ${
+                        className={`px-4 py-2.5 shadow-sm ${
                           message.isMine
-                            ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-br-sm"
-                            : "bg-white text-gray-900 border border-gray-200 rounded-bl-sm"
+                            ? "bg-indigo-600 text-white rounded-2xl rounded-tr-none"
+                            : "bg-white text-slate-800 border border-slate-100 rounded-2xl rounded-tl-none font-medium"
                         }`}
                       >
-                        <p className="text-sm leading-relaxed">
+                        <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap text-left">
                           {message.text}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 px-1">
+                      <span className="text-[9px] font-black text-slate-400 mt-1.5 px-1 uppercase tracking-tighter">
                         {message.time}
                       </span>
                     </div>
@@ -571,17 +566,17 @@ const ChatPage = () => {
             </div>
 
             {/* Message Input */}
-            <div className="p-4 bg-white border-t border-gray-200">
+            <div className="p-4 bg-white border-t border-slate-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
               <form
                 onSubmit={handleSendMessage}
-                className="flex items-end gap-3"
+                className="flex items-center gap-2 sm:gap-3 bg-slate-50 border border-slate-200 p-1.5 sm:p-2 rounded-2xl focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all"
               >
                 <button
                   type="button"
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                  className="p-2 text-slate-400 hover:bg-white hover:text-indigo-600 rounded-xl transition-all flex-shrink-0"
                 >
                   <svg
-                    className="w-6 h-6 text-gray-500"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -595,45 +590,32 @@ const ChatPage = () => {
                   </svg>
                 </button>
 
-                <div className="flex-1 flex items-end gap-2 bg-gray-100 rounded-xl px-4 py-2">
-                  <textarea
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Type your message..."
-                    rows="1"
-                    className="flex-1 bg-transparent border-none outline-none resize-none text-sm text-gray-900 placeholder-gray-500 max-h-32"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage(e);
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="p-1 hover:bg-gray-200 rounded transition-colors flex-shrink-0"
-                  >
-                    <svg
-                      className="w-5 h-5 text-gray-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                <textarea
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Type a message..."
+                  rows="1"
+                  className="flex-1 bg-transparent border-none outline-none resize-none text-xs sm:text-sm text-slate-900 placeholder-slate-400 py-1.5"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
+                  }}
+                />
 
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors flex-shrink-0"
+                  disabled={!messageInput.trim()}
+                  className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 disabled:opacity-50 disabled:shadow-none flex-shrink-0"
                 >
-                  Send
+                  <svg
+                    className="w-5 h-5 rotate-90"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                  </svg>
                 </button>
               </form>
             </div>
