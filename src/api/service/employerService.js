@@ -1,4 +1,5 @@
 import { axiosInstance } from "../axiosInstance/axiosInstance";
+import axios from "axios";
 
 export const registerEmployer = async (
   companyName,
@@ -245,6 +246,16 @@ export const getInterviewDetails = async (employerId) => {
 export const getSuggestedCandidates = async (employerId) => {
   try {
     const response = await axiosInstance.get(`/get-suggested-candidates/${employerId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getAllEmployerPlans = async () => {
+  try {
+    const plansAPIUrl = import.meta.env.VITE_BASE_ROUTE_JOBSTORM.replace("/employer", "/admin/getallplans");
+    const response = await axios.get(plansAPIUrl);
     return response;
   } catch (err) {
     return err;
