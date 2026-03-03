@@ -243,6 +243,15 @@ export const getInterviewDetails = async (employerId) => {
   }
 };
 
+export const getAppliedCandidates = async (jobId) => {
+  try {
+    const response = await axiosInstance.get(`/fetchappliedcand/${jobId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
 export const getSuggestedCandidates = async (employerId) => {
   try {
     const response = await axiosInstance.get(`/get-suggested-candidates/${employerId}`);
@@ -250,6 +259,10 @@ export const getSuggestedCandidates = async (employerId) => {
   } catch (err) {
     return err;
   }
+};
+
+export const generalAIChat = async (message, chatHistory) => {
+  return await axiosInstance.post(`/ai-chat`, { message, chatHistory });
 };
 
 export const getAllEmployerPlans = async () => {

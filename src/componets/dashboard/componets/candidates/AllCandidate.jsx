@@ -8,6 +8,7 @@ const AllCandidate = () => {
   const navigate = useNavigate();
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,10 +58,38 @@ const AllCandidate = () => {
     return colors[index % colors.length];
   };
 
+  // Filter Logic
+  const filteredCandidates = candidates.filter((candidate) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+
+    // Split query into words to support multi-skill search (e.g., "React Node")
+    const searchTerms = query.split(/[\s,]+/).filter(Boolean);
+
+    const name = (candidate.userName || "").toLowerCase();
+    const role = (candidate.currentrole || "").toLowerCase();
+    const city = (candidate.city || "").toLowerCase();
+    const skills = (candidate.skills || []).map((s) => s.toLowerCase());
+
+    // Every search term must match at least one field (AND logic across terms)
+    return searchTerms.every(
+      (term) =>
+        name.includes(term) ||
+        role.includes(term) ||
+        city.includes(term) ||
+        skills.some((skill) => skill.includes(term)),
+    );
+  });
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   // Pagination Logic
   const indexOfLastCandidate = currentPage * candidatesPerPage;
   const indexOfFirstCandidate = indexOfLastCandidate - candidatesPerPage;
-  const currentCandidates = candidates.slice(
+  const currentCandidates = filteredCandidates.slice(
     indexOfFirstCandidate,
     indexOfLastCandidate,
   );
@@ -95,7 +124,7 @@ const AllCandidate = () => {
 
         {/* Filters/Sort Mock (to match aesthetics of typical robust lists, even if inactive currently) */}
         <div className="flex items-center justify-between gap-4 pb-2 border-b border-gray-100">
-          <div className="relative w-64">
+          <div className="relative w-full max-w-md">
             <svg
               className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               fill="none"
@@ -111,7 +140,9 @@ const AllCandidate = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search candidates..."
+              placeholder="Search candidates by name, role, skills, or city..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
             />
           </div>
@@ -333,7 +364,7 @@ const AllCandidate = () => {
         </div>
 
         {/* Pagination Controls */}
-        {candidates.length > candidatesPerPage && (
+        {filteredCandidates.length > candidatesPerPage && (
           <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-xl mt-6 shadow-sm">
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
@@ -344,9 +375,12 @@ const AllCandidate = () => {
                   </span>{" "}
                   to{" "}
                   <span className="font-semibold">
-                    {Math.min(indexOfLastCandidate, candidates.length)}
+                    {Math.min(indexOfLastCandidate, filteredCandidates.length)}
                   </span>{" "}
-                  of <span className="font-semibold">{candidates.length}</span>{" "}
+                  of{" "}
+                  <span className="font-semibold">
+                    {filteredCandidates.length}
+                  </span>{" "}
                   candidates
                 </p>
               </div>
@@ -380,7 +414,7 @@ const AllCandidate = () => {
                   {/* Page Numbers */}
                   {[
                     ...Array(
-                      Math.ceil(candidates.length / candidatesPerPage),
+                      Math.ceil(filteredCandidates.length / candidatesPerPage),
                     ).keys(),
                   ].map((number) => {
                     const pageNum = number + 1;
@@ -388,7 +422,9 @@ const AllCandidate = () => {
                     if (
                       pageNum === 1 ||
                       pageNum ===
-                        Math.ceil(candidates.length / candidatesPerPage) ||
+                        Math.ceil(
+                          filteredCandidates.length / candidatesPerPage,
+                        ) ||
                       (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
                     ) {
                       return (
@@ -425,7 +461,7 @@ const AllCandidate = () => {
                     onClick={() => paginate(currentPage + 1)}
                     disabled={
                       currentPage ===
-                      Math.ceil(candidates.length / candidatesPerPage)
+                      Math.ceil(filteredCandidates.length / candidatesPerPage)
                     }
                     className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
                       currentPage ===

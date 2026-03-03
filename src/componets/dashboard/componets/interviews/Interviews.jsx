@@ -1,31 +1,262 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../../layout/MainLayout";
-import { getInterviewDetails } from "../../../../api/service/employerService";
+import {
+  getInterviewDetails,
+  getActiveJobPosted,
+  getAppliedCandidates,
+  updateJobApplicationStatus,
+  generalAIChat,
+} from "../../../../api/service/employerService";
+import { toast } from "react-toastify";
 
 const Interviews = () => {
   const employerId = localStorage.getItem("userId");
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [applicants, setApplicants] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState("");
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [interviewData, setInterviewData] = useState({
+    date: "",
+    time: "",
+    endTime: "",
+    type: "Online",
+    link: "",
+    notes: "",
+  });
+
+  // AI Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Hello! I'm your AI Recruitment Assistant. How can I help you with your interviews today?",
+    },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = React.useRef(null);
+
+  // Dragging State
+  const [chatPosition, setChatPosition] = useState({
+    x: window.innerWidth - 420,
+    y: window.innerHeight - 520,
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - chatPosition.x,
+      y: e.clientY - chatPosition.y,
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+
+      // Boundaries
+      const maxX = window.innerWidth - 400;
+      const maxY = window.innerHeight - 500;
+
+      setChatPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await getInterviewDetails(employerId);
-        // Extract array from response based on the logged JSON structure
-        if (response?.data?.success && response?.data?.data) {
-          setInterviews(response.data.data);
-        } else if (response?.data) {
-          setInterviews(Array.isArray(response.data) ? response.data : []);
+        const [intResponse, jobsResponse] = await Promise.all([
+          getInterviewDetails(employerId),
+          getActiveJobPosted(employerId),
+        ]);
+
+        if (intResponse?.data?.success && intResponse?.data?.data) {
+          setInterviews(intResponse.data.data);
+        } else if (intResponse?.data) {
+          setInterviews(
+            Array.isArray(intResponse.data) ? intResponse.data : [],
+          );
+        }
+
+        if (jobsResponse?.status === 200 || jobsResponse?.data) {
+          setJobs(jobsResponse.data || []);
         }
       } catch (error) {
-        console.error("Error fetching interviews:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
+
+    const scrollToChatBottom = () => {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+    scrollToChatBottom();
+
     if (employerId) fetchData();
-  }, [employerId]);
+  }, [employerId, chatMessages]);
+
+  useEffect(() => {
+    const fetchApplicants = async () => {
+      if (!selectedJobId) {
+        setApplicants([]);
+        return;
+      }
+      try {
+        const response = await getAppliedCandidates(selectedJobId);
+        if (response?.data?.success) {
+          setApplicants(response.data.applications || []);
+        }
+      } catch (error) {
+        console.error("Error fetching applicants:", error);
+      }
+    };
+    fetchApplicants();
+  }, [selectedJobId]);
+
+  const handleScheduleInterview = async (e) => {
+    e.preventDefault();
+    if (
+      !selectedJobId ||
+      !selectedApplicant ||
+      !interviewData.date ||
+      !interviewData.time
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    try {
+      setScheduling(true);
+      const res = await updateJobApplicationStatus(
+        selectedJobId,
+        selectedApplicant._id,
+        "Interview",
+        {
+          interviewDate: interviewData.date,
+          interviewTime: interviewData.time,
+          interviewEndTime: interviewData.endTime,
+          interviewType: interviewData.type,
+          interviewLink: interviewData.link,
+          interviewNotes: interviewData.notes,
+        },
+      );
+
+      if (res?.status === 200 || res?.data?.success) {
+        toast.success("Interview scheduled successfully");
+        setIsModalOpen(false);
+        // Reset form
+        setSelectedJobId("");
+        setSelectedApplicant(null);
+        setInterviewData({
+          date: "",
+          time: "",
+          endTime: "",
+          type: "Online",
+          link: "",
+          notes: "",
+        });
+        // Refresh list
+        const updated = await getInterviewDetails(employerId);
+        if (updated?.data?.data) setInterviews(updated.data.data);
+      } else {
+        toast.error("Failed to schedule interview");
+      }
+    } catch (error) {
+      console.error("Schedule error:", error);
+      toast.error("An error occurred");
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMessage = chatInput.trim();
+    const newMessages = [
+      ...chatMessages,
+      { role: "user", content: userMessage },
+    ];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setIsTyping(true);
+
+    try {
+      const response = await generalAIChat(userMessage, chatMessages);
+      if (response?.status === 200 && response?.data?.success) {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: response.data.data,
+          },
+        ]);
+      } else {
+        toast.error(
+          response?.data?.message ||
+            "AI Assistant is offline. Please try again.",
+        );
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      const errorMsg =
+        error.response?.data?.message || "AI Assistant connection lost";
+      toast.error(errorMsg);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const calculateTotalHours = (interviewsList) => {
+    let totalMinutes = 0;
+    interviewsList.forEach((interview) => {
+      if (interview.interviewTime && interview.interviewEndTime) {
+        const [startH, startM] = interview.interviewTime.split(":").map(Number);
+        const [endH, endM] = interview.interviewEndTime.split(":").map(Number);
+        const startTotal = startH * 60 + startM;
+        const endTotal = endH * 60 + endM;
+        if (endTotal > startTotal) {
+          totalMinutes += endTotal - startTotal;
+        }
+      } else {
+        // Fallback or skip if field missing
+        // totalMinutes += 90; // Don't make dummy data
+      }
+    });
+    return (totalMinutes / 60).toFixed(1);
+  };
 
   // Separate interviews by sorting if needed.
   // For the mockup layout, we will place real API data into "Upcoming"
@@ -94,7 +325,10 @@ const Interviews = () => {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-lg font-semibold transition-colors border border-yellow-200 shadow-sm text-sm">
+            <button
+              onClick={() => setIsChatOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-lg font-semibold transition-colors border border-yellow-200 shadow-sm text-sm"
+            >
               <svg
                 className="w-4 h-4 text-yellow-500"
                 fill="currentColor"
@@ -104,7 +338,10 @@ const Interviews = () => {
               </svg>
               AI Question Gen
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#5A45ED] hover:bg-[#4d3cd2] text-white rounded-lg font-semibold transition-colors shadow-sm text-sm">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#5A45ED] hover:bg-[#4d3cd2] text-white rounded-lg font-semibold transition-colors shadow-sm text-sm"
+            >
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -217,38 +454,7 @@ const Interviews = () => {
                             Join Meet
                           </a>
                         )}
-                        <div className="flex items-center gap-1 ml-auto">
-                          <button className="text-gray-400 hover:text-indigo-500 p-1.5 transition-colors rounded-md hover:bg-gray-50">
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                              />
-                            </svg>
-                          </button>
-                          <button className="text-gray-400 hover:text-gray-700 p-1.5 transition-colors rounded-md hover:bg-gray-50">
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
-                              />
-                            </svg>
-                          </button>
-                        </div>
+                        <div className="flex items-center gap-1 ml-auto"></div>
                       </div>
                     </div>
                   ))
@@ -368,30 +574,42 @@ const Interviews = () => {
                   You have a busy week ahead!
                 </p>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 mb-3">
                   <div className="bg-white/20 rounded-xl p-4 border border-white/20 shadow-sm">
-                    <div className="text-3xl font-bold mb-1 tracking-tight">
+                    <div className="text-2xl font-bold mb-1 tracking-tight">
                       {loading ? (
-                        <div className="h-9 w-12 bg-white/30 rounded animate-pulse"></div>
+                        <div className="h-7 w-10 bg-white/30 rounded animate-pulse"></div>
                       ) : (
-                        interviews.length
+                        pastInterviews.length
                       )}
                     </div>
-                    <div className="text-[11px] text-indigo-100 font-semibold uppercase tracking-wider">
-                      Interviews
+                    <div className="text-[10px] text-indigo-100 font-semibold uppercase tracking-wider">
+                      Interviews Taken
                     </div>
                   </div>
                   <div className="bg-white/20 rounded-xl p-4 border border-white/20 shadow-sm">
-                    <div className="text-3xl font-bold mb-1 tracking-tight">
+                    <div className="text-2xl font-bold mb-1 tracking-tight">
                       {loading ? (
-                        <div className="h-9 w-16 bg-white/30 rounded animate-pulse"></div>
+                        <div className="h-7 w-10 bg-white/30 rounded animate-pulse"></div>
                       ) : (
-                        `${interviews.length * 1.5}h`
+                        upcomingInterviews.length
                       )}
                     </div>
-                    <div className="text-[11px] text-indigo-100 font-semibold uppercase tracking-wider">
-                      Total Time
+                    <div className="text-[10px] text-indigo-100 font-semibold uppercase tracking-wider">
+                      Pending
                     </div>
+                  </div>
+                </div>
+                <div className="bg-white/20 rounded-xl p-4 border border-white/20 shadow-sm text-center">
+                  <div className="text-3xl font-bold mb-1 tracking-tight">
+                    {loading ? (
+                      <div className="h-9 w-16 bg-white/30 rounded mx-auto animate-pulse"></div>
+                    ) : (
+                      `${calculateTotalHours(interviews)}h`
+                    )}
+                  </div>
+                  <div className="text-[11px] text-indigo-100 font-semibold uppercase tracking-wider">
+                    Total Hours Recorded
                   </div>
                 </div>
               </div>
@@ -474,6 +692,344 @@ const Interviews = () => {
           </div>
         </div>
       </div>
+
+      {/* Schedule Interview Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-indigo-50/30">
+              <h2 className="text-xl font-bold text-gray-900">
+                Schedule Interview
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleScheduleInterview} className="p-6 space-y-5">
+              {/* Job Selection */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                  Select Job Posting
+                </label>
+                <select
+                  required
+                  value={selectedJobId}
+                  onChange={(e) => {
+                    setSelectedJobId(e.target.value);
+                    setSelectedApplicant(null);
+                  }}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                >
+                  <option value="">Choose a job...</option>
+                  {jobs.map((job) => (
+                    <option key={job._id} value={job._id}>
+                      {job.jobTitle}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Candidate Selection */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                  Select Applicant
+                </label>
+                <select
+                  required
+                  disabled={!selectedJobId}
+                  value={selectedApplicant?._id || ""}
+                  onChange={(e) => {
+                    const app = applicants.find(
+                      (a) => a._id === e.target.value,
+                    );
+                    setSelectedApplicant(app);
+                  }}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none disabled:opacity-50"
+                >
+                  <option value="">
+                    {selectedJobId
+                      ? "Choose an applicant..."
+                      : "First select a job"}
+                  </option>
+                  {applicants.map((app) => (
+                    <option key={app._id} value={app._id}>
+                      {app.firstName ||
+                        app.userName ||
+                        app.email ||
+                        "Unnamed Candidate"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date & Time */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={interviewData.date}
+                    onChange={(e) =>
+                      setInterviewData({
+                        ...interviewData,
+                        date: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={interviewData.time}
+                    onChange={(e) =>
+                      setInterviewData({
+                        ...interviewData,
+                        time: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={interviewData.endTime}
+                    onChange={(e) =>
+                      setInterviewData({
+                        ...interviewData,
+                        endTime: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Type & Link */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    Interview Type
+                  </label>
+                  <select
+                    value={interviewData.type}
+                    onChange={(e) =>
+                      setInterviewData({
+                        ...interviewData,
+                        type: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                  >
+                    <option value="Online">Online</option>
+                    <option value="In-person">In-person</option>
+                  </select>
+                </div>
+                {interviewData.type === "Online" && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                      Meeting Link
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={interviewData.link}
+                      onChange={(e) =>
+                        setInterviewData({
+                          ...interviewData,
+                          link: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors shadow-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={scheduling}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-[#5A45ED] hover:bg-[#4d3cd2] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {scheduling ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Scheduling...
+                    </>
+                  ) : (
+                    "Schedule Now"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* AI Chat Draggable Window */}
+      {isChatOpen && (
+        <div
+          style={{
+            left: `${chatPosition.x}px`,
+            top: `${chatPosition.y}px`,
+            position: "fixed",
+          }}
+          className={`z-[60] w-full max-w-[380px] h-[500px] bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border border-gray-100 transition-shadow ${isDragging ? "shadow-blue-200 cursor-grabbing" : "shadow-2xl"}`}
+        >
+          {/* Chat Header (Draggable Handle) */}
+          <div
+            onMouseDown={handleMouseDown}
+            className="p-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-600 to-blue-600 text-white cursor-grab active:cursor-grabbing"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <div className="select-none">
+                <h3 className="font-bold text-sm">AI Recruiter</h3>
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                  <span className="text-[10px] text-indigo-100">
+                    Live Assistant
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsChatOpen(false)}
+              className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30">
+            {chatMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[90%] p-3 rounded-2xl shadow-sm text-sm ${
+                    msg.role === "user"
+                      ? "bg-indigo-600 text-white rounded-tr-none"
+                      : "bg-white text-gray-800 rounded-tl-none border border-gray-100"
+                  }`}
+                >
+                  <p className="leading-relaxed whitespace-pre-wrap">
+                    {msg.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm flex gap-1">
+                  <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Chat Input */}
+          <div className="p-4 border-t border-gray-100 bg-white">
+            <form onSubmit={handleSendMessage} className="relative">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask me anything..."
+                className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!chatInput.trim() || isTyping}
+                className="absolute right-1.5 top-1.5 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-md"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9-2-9-18-9 18 9 2zm0 0v-8"
+                  />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 };
