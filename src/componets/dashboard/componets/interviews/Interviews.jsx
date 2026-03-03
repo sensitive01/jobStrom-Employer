@@ -91,6 +91,7 @@ const Interviews = () => {
     };
   }, [isDragging, dragOffset]);
 
+  // Separate data fetching from chat effects to prevent janky rerenders
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -118,13 +119,19 @@ const Interviews = () => {
       }
     };
 
+    if (employerId) fetchData();
+  }, [employerId]);
+
+  // Handle chat auto-scroll separately
+  useEffect(() => {
     const scrollToChatBottom = () => {
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
-    scrollToChatBottom();
 
-    if (employerId) fetchData();
-  }, [employerId, chatMessages]);
+    // Small delay to ensure the DOM has updated with the new message or typing indicator
+    const timeoutId = setTimeout(scrollToChatBottom, 100);
+    return () => clearTimeout(timeoutId);
+  }, [chatMessages, isTyping]);
 
   useEffect(() => {
     const fetchApplicants = async () => {
