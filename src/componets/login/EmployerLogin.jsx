@@ -222,7 +222,7 @@ const EmployerLogin = () => {
                       </label>
                     </div>
                     <a
-                      href="/candidate-reset-password"
+                      href="/forgot-password"
                       className="text-sm text-white hover:text-purple-100 transition-colors"
                     >
                       Forgot Password?

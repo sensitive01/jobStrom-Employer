@@ -4,16 +4,17 @@ import {
   getCandidateDetails,
   getJobDetails,
   updateJobApplicationStatus,
+  getCandidateData,
+  applyCandidateToJob,
 } from "../../../../api/service/employerService";
 import MainLayout from "../../layout/MainLayout";
+import { toast } from "react-toastify";
+import Swal from "sweetalert2";
+import { useCallback } from "react";
 
 // API Configuration
 const API_BASE_URL =
   import.meta.env.REACT_APP_API_URL || "http://localhost:5000/api";
-
-const getAuthToken = () => {
-  return localStorage.getItem("token");
-};
 
 const JobApplications = () => {
   const { jobId } = useParams();
@@ -37,6 +38,14 @@ const JobApplications = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Discover candidates state
+  const [allCandidates, setAllCandidates] = useState([]);
+  const [loadingAllCandidates, setLoadingAllCandidates] = useState(false);
+  const [candidateSearchQuery, setCandidateSearchQuery] = useState("");
+  const [isApplyingManual, setIsApplyingManual] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Interview modal state
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [interviewDate, setInterviewDate] = useState("");
@@ -44,12 +53,9 @@ const JobApplications = () => {
   const [interviewLink, setInterviewLink] = useState("");
   const [interviewNotes, setInterviewNotes] = useState("");
 
-  useEffect(() => {
-    fetchJobApplications();
-  }, [jobId]);
 
   // Fetch job and applications
-  const fetchJobApplications = async () => {
+  const fetchJobApplications = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getJobDetails(jobId);
@@ -64,6 +70,105 @@ const JobApplications = () => {
       setError("Failed to load applications");
     } finally {
       setLoading(false);
+    }
+  }, [jobId]);
+
+  useEffect(() => {
+    fetchJobApplications();
+  }, [jobId, fetchJobApplications]);
+
+  // Fetch all candidates for discovery
+  const fetchAllCandidates = async () => {
+    try {
+      setLoadingAllCandidates(true);
+      const response = await getCandidateData();
+      if (response.data && response.data.data) {
+        setAllCandidates(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching candidate database:", error);
+      toast.error("Failed to load candidate database");
+    } finally {
+      setLoadingAllCandidates(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "discover") {
+      fetchAllCandidates();
+    }
+  }, [activeTab]);
+
+  const handleManualApply = async (candidate) => {
+    // Check if already applied
+    const isAlreadyApplied = applications.some(
+      (app) => app.applicantId === candidate._id
+    );
+
+    if (isAlreadyApplied) {
+      toast.info("This candidate has already applied to this job");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Confirm Application",
+      text: `Are you sure you want to apply ${candidate.userName} to this job?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#4f46e5",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, apply",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setIsApplyingManual(true);
+        const response = await applyCandidateToJob(jobId, candidate._id);
+        if (response.data && response.data.success) {
+          toast.success("Candidate applied successfully!");
+          fetchJobApplications(); // Refresh applicants
+        } else {
+          toast.error(response.data?.message || "Failed to apply candidate");
+        }
+      } catch (error) {
+        console.error("Error applying candidate:", error);
+        toast.error("An error occurred during application");
+      } finally {
+        setIsApplyingManual(false);
+      }
+    }
+  };
+
+  const filteredDiscoverCandidates = allCandidates.filter((candidate) => {
+    const query = candidateSearchQuery.toLowerCase().trim();
+    if (!query) return true;
+
+    const name = (candidate.userName || "").toLowerCase();
+    const role = (candidate.currentrole || "").toLowerCase();
+    const skills = (candidate.skills || []).map((s) => s.toLowerCase());
+
+    return (
+      name.includes(query) ||
+      role.includes(query) ||
+      skills.some((skill) => skill.includes(query))
+    );
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredDiscoverCandidates.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCandidates = filteredDiscoverCandidates.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll to search box smoothly
+    const searchBox = document.getElementById("discover-search");
+    if (searchBox) {
+      searchBox.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -107,8 +212,6 @@ const JobApplications = () => {
     additionalData = {},
   ) => {
     try {
-      const token = getAuthToken();
-
       const response = await updateJobApplicationStatus(
         jobId,
         applicationId,
@@ -314,7 +417,7 @@ const JobApplications = () => {
   return (
     <MainLayout>
       {/* Custom CSS to hide scrollbars while maintaining scroll functionality */}
-      <style jsx>{`
+      <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -405,6 +508,16 @@ const JobApplications = () => {
                 }`}
               >
                 👥 Applicants ({applications.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("discover")}
+                className={`py-4 px-2 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === "discover"
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                🔍 Discover Candidates
               </button>
             </div>
           </div>
@@ -852,6 +965,150 @@ const JobApplications = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Discover Candidates Tab */}
+          {activeTab === "discover" && (
+            <div className="space-y-6">
+              {/* Search Box */}
+              <div id="discover-search" className="bg-white rounded-xl shadow-sm p-6">
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    🔍
+                  </span>
+                  <input
+                    type="text"
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                    placeholder="Search candidate database by name, role, or skill..."
+                    value={candidateSearchQuery}
+                    onChange={(e) => setCandidateSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {loadingAllCandidates ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
+                  <p className="text-gray-500">Searching database...</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {currentCandidates.length === 0 ? (
+                    <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                      <p className="text-gray-500 font-medium">No candidates found in the database.</p>
+                    </div>
+                  ) : (
+                    currentCandidates.map((candidate) => {
+                      const isAlreadyApplied = applications.some(
+                        (app) => app.applicantId === candidate._id
+                      );
+
+                      return (
+                        <div
+                          key={candidate._id}
+                          className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 flex flex-col md:flex-row justify-between items-start gap-4 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start gap-4 w-full flex-1 min-w-0">
+                            <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg flex-shrink-0 mt-1">
+                                {candidate.userName?.charAt(0).toUpperCase() || "U"}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-bold text-gray-900 truncate">{candidate.userName}</h3>
+                                <p className="text-sm text-gray-500 truncate">{candidate.currentrole || "Role not specified"}</p>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {(candidate.skills || []).slice(0, 5).map((skill, si) => (
+                                        <span key={si} className="text-[10px] bg-gray-50 text-gray-600 px-2.5 py-1 rounded border border-gray-100 uppercase font-black truncate max-w-[150px]">
+                                            {skill}
+                                        </span>
+                                    ))}
+                                    {(candidate.skills || []).length > 5 && (
+                                        <span className="text-[10px] text-gray-400 font-bold px-1 py-1 italic">
+                                            +{(candidate.skills || []).length - 5}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={() => handleManualApply(candidate)}
+                            disabled={isAlreadyApplied || isApplyingManual}
+                            className={`w-full md:w-auto px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm flex-shrink-0 whitespace-nowrap md:mt-1 ${
+                              isAlreadyApplied 
+                                ? "bg-emerald-50 text-emerald-600 border border-emerald-100 cursor-default" 
+                                : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
+                            } disabled:opacity-50`}
+                          >
+                            {isAlreadyApplied ? (
+                              <span className="flex items-center gap-2">
+                                <span className="text-lg">✓</span> Applied
+                              </span>
+                            ) : (
+                              isApplyingManual ? "Applying..." : "Apply to this Job"
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm mt-4">
+                      <div className="text-sm text-gray-500">
+                        Showing <span className="font-medium text-gray-900">{indexOfFirstItem + 1}</span> to <span className="font-medium text-gray-900">{Math.min(indexOfLastItem, filteredDiscoverCandidates.length)}</span> of <span className="font-medium text-gray-900">{filteredDiscoverCandidates.length}</span> candidates
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        >
+                          Previous
+                        </button>
+                        
+                        <div className="flex items-center gap-1">
+                          {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                                pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                            } else {
+                                pageNum = currentPage - 2 + i;
+                            }
+                            
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => handlePageChange(pageNum)}
+                                className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
+                                  currentPage === pageNum
+                                    ? "bg-indigo-600 text-white shadow-md scale-105"
+                                    : "text-gray-600 hover:bg-gray-100"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

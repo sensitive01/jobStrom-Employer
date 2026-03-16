@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import EmployerLogin from "./componets/login/EmployerLogin";
+import ForgotPassword from "./componets/login/ForgotPassword";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import EmployerSignUpPage from "./componets/register/EmployerSignUpPage";
@@ -29,6 +30,7 @@ function App() {
       <Routes>
         <Route path="/signup" element={<EmployerSignUpPage />} />
         <Route path="/" element={<EmployerLogin />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/all-job-list" element={<JobPostedPage />} />
         <Route path="/post-new-job" element={<PostJobForm />} />

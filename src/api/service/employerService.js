@@ -319,3 +319,58 @@ export const uploadEmployerCoverPic = async (employerId, formData) => {
     return err;
   }
 };
+
+export const applyCandidateToJob = async (jobId, candidateId) => {
+  try {
+    const response = await axiosInstance.post(`/apply-job/${jobId}/${candidateId}`);
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const employerForgotPassword = async (userEmail) => {
+  try {
+    const response = await axiosInstance.post(`/employerforgotpassword`, {
+      userEmail,
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const employerVerifyOTP = async (userEmail, otp) => {
+  try {
+    const response = await axiosInstance.post(`/employerverify-otp`, {
+      userEmail,
+      otp,
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const employerResendOTP = async (userEmail) => {
+  try {
+    const response = await axiosInstance.post(`/employerresend-otp`, {
+      userEmail,
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};
+
+export const employerChangePassword = async (userEmail, newPassword) => {
+  try {
+    const response = await axiosInstance.post(`/employerchange-password`, {
+      userEmail,
+      newPassword,
+    });
+    return response;
+  } catch (err) {
+    return err;
+  }
+};

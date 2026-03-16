@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../layout/MainLayout";
-import { getCandidateData } from "../../../../api/service/employerService";
+import { getCandidateData, getActiveJobPosted, applyCandidateToJob } from "../../../../api/service/employerService";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 
 const AllCandidate = () => {
   const navigate = useNavigate();
@@ -13,10 +14,26 @@ const AllCandidate = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [candidatesPerPage] = useState(10);
+  const [jobs, setJobs] = useState([]);
+  const [selectedJob, setSelectedJob] = useState("");
+  const [isApplying, setIsApplying] = useState(false);
 
   useEffect(() => {
     fetchCandidates();
+    fetchJobs();
   }, []);
+
+  const fetchJobs = async () => {
+    try {
+      const employerId = localStorage.getItem("employerId");
+      if (employerId) {
+        const response = await getActiveJobPosted(employerId);
+        setJobs(response.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    }
+  };
 
   const fetchCandidates = async () => {
     try {
@@ -34,6 +51,42 @@ const AllCandidate = () => {
   const handleViewMore = (candidate) => {
     if (candidate._id) {
       navigate(`/view-candidate-details/${candidate._id}`);
+    }
+  };
+
+  const handleApplyToJob = async (candidate) => {
+    if (!selectedJob) {
+      toast.warning("Please select a job first from the dropdown at the top.");
+      // Scroll to top to help user find the selector
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    const confirm = await Swal.fire({
+      title: "Confirm Application",
+      text: `Are you sure you want to apply ${candidate.userName} to the job "${jobs.find(j => j._id === selectedJob)?.jobTitle}"?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#5A45ED",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, apply",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        setIsApplying(true);
+        const response = await applyCandidateToJob(selectedJob, candidate._id);
+        if (response.data && response.data.success) {
+          toast.success(response.data.message || "Applied successfully!");
+        } else {
+          toast.error(response.data?.message || "Failed to apply. Candidate might have already applied.");
+        }
+      } catch (error) {
+        console.error("Error applying to job:", error);
+        toast.error("An error occurred while applying.");
+      } finally {
+        setIsApplying(false);
+      }
     }
   };
 
@@ -122,8 +175,8 @@ const AllCandidate = () => {
           </p>
         </div>
 
-        {/* Filters/Sort Mock (to match aesthetics of typical robust lists, even if inactive currently) */}
-        <div className="flex items-center justify-between gap-4 pb-2 border-b border-gray-100">
+        {/* Filters/Sort & Job Selector */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 pb-2 border-b border-gray-100">
           <div className="relative w-full max-w-md">
             <svg
               className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -140,30 +193,29 @@ const AllCandidate = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search candidates by name, role, skills, or city..."
+              placeholder="Search candidates by name, role, skills..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-semibold rounded-lg hover:bg-gray-50 shadow-sm transition-colors">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">Apply For Job:</span>
+              <select
+                value={selectedJob}
+                onChange={(e) => setSelectedJob(e.target.value)}
+                className="flex-grow sm:flex-none px-3.5 py-2 bg-white border border-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-50 shadow-sm transition-colors focus:ring-2 focus:ring-indigo-500 outline-none min-w-[200px]"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                />
-              </svg>
-              Filter
-            </button>
+                <option value="">Select a Job to Apply Candidates</option>
+                {jobs.map((job) => (
+                  <option key={job._id} value={job._id}>
+                    {job.jobTitle}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -350,12 +402,25 @@ const AllCandidate = () => {
                       </button>
                     </div>
 
-                    <button
-                      onClick={() => handleViewMore(candidate)}
-                      className="bg-[#5A45ED] hover:bg-[#4d3cd2] text-white px-5 py-2 rounded-lg text-[13px] font-bold transition-colors w-full sm:w-auto shadow-sm"
-                    >
-                      View Profile
-                    </button>
+                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => handleViewMore(candidate)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2 rounded-lg text-[13px] font-bold transition-colors w-full sm:min-w-[120px]"
+                      >
+                        View Profile
+                      </button>
+                      <button
+                        onClick={() => handleApplyToJob(candidate)}
+                        disabled={isApplying}
+                        className={`${selectedJob ? 'bg-[#5A45ED] hover:bg-[#4d3cd2]' : 'bg-gray-300 cursor-not-allowed'} text-white px-5 py-2 rounded-lg text-[13px] font-bold transition-colors w-full sm:min-w-[120px] shadow-sm flex items-center justify-center`}
+                      >
+                        {isApplying ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          "Apply to Job"
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
